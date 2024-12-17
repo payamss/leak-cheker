@@ -111,11 +111,16 @@ const IPLeaksTest = () => {
       </div>
     ));
   };
-
+  const renderEvents = (events: RDAPData['events']) =>
+    events.map((event, idx) => (
+      <p key={idx} className="text-sm text-gray-600">
+        {event.eventAction}: {new Date(event.eventDate).toLocaleString()}
+      </p>
+    ));
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-        IP Leak Test
+        Your Exposed Public IP Data
       </h2>
 
       {error ? (
@@ -220,7 +225,7 @@ const IPLeaksTest = () => {
           {/* RDAP Details */}
           <div className="p-6 bg-white rounded-lg shadow-md">
             <h3 className="text-xl font-semibold text-blue-600 mb-4 flex items-center">
-              <FiServer className="w-6 h-6 mr-2" /> RDAP Data
+              <FiServer className="w-6 h-6 mr-2" /> Host Data
             </h3>
             <p>
               <strong>IP Range:</strong> {rdapData?.handle}
@@ -232,7 +237,12 @@ const IPLeaksTest = () => {
               <strong>Type:</strong> {rdapData?.type}
             </p>
             <div className="mt-4 space-y-2">{renderEntities(rdapData?.entities || [])}</div>
+            <div className="mt-4 space-y-2">
+              <h4 className="font-semibold">Events</h4>
+              {renderEvents(rdapData?.events || [])}
+            </div>
           </div>
+
         </div>
       )}
     </div>
