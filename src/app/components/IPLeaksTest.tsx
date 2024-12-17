@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const IPLeakTest = () => {
+const IPLeaksTest = () => {
   const [ip, setIp] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,4 +29,4 @@ const IPLeakTest = () => {
   );
 };
 
-export default IPLeakTest;
+export default IPLeaksTest;

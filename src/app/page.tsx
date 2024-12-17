@@ -1,7 +1,4 @@
-import IPLeakTest from './components/IPLeakTest';
-import DNSLeakTest from './components/DNSLeakTest';
-import WebRTCLeakTest from './components/WebRTCLeakTest';
-import LocationTest from './components/LocationTest';
+import TabNavigator from './components/TabNavigator';
 
 export default function Home() {
   return (
@@ -14,10 +11,8 @@ export default function Home() {
           Use this tool to check for IP leaks, DNS leaks, WebRTC leaks, and location exposure.
         </p>
         <div className="space-y-6">
-          <IPLeakTest />
-          <DNSLeakTest />
-          <WebRTCLeakTest />
-          <LocationTest />
+          <TabNavigator />
+
         </div>
         <footer className="text-center text-gray-500 text-sm mt-8">
           Created for personal security awareness. Stay safe online!

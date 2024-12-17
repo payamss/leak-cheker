@@ -29,7 +29,7 @@ type LocationInfo = {
   timestamp: string;
 };
 
-const LocationTest = () => {
+const GeoLocationTest = () => {
   const [location, setLocation] = useState<LocationInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -116,4 +116,4 @@ const LocationTest = () => {
   );
 };
 
-export default LocationTest;
+export default GeoLocationTest;
