@@ -8,7 +8,7 @@ import WebRTCLeakTest from './WebRTCLeakTest';
 import GeoLocationTest from './GeoLocationTest';
 
 const TabNavigator = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('ip-leaks')
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Define available tabs
