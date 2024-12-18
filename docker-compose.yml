@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 6000:6000
+    environment:
+      - NODE_ENV=production
+    networks:
+      - network
+    container_name: leak-chker
+networks:
+  network:
+    driver: bridge
