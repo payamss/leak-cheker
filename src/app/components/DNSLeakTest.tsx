@@ -18,13 +18,10 @@ type DNSServer = {
 };
 
 const DNSLeakTest = () => {
-  const [referenceIPv4, setReferenceIPv4] = useState<string | null>(null);
-  const [referenceIPv6, setReferenceIPv6] = useState<string | null>(null);
-  const [referenceISP, setReferenceISP] = useState<string | null>(null);
-  const [referenceCountry, setReferenceCountry] = useState<string | null>(null);
+  const [referenceServer, setReferenceServer] = useState<DNSServer | null>(null);
   const [dnsServers, setDNSServers] = useState<DNSServer[]>([]);
   const [currentTest, setCurrentTest] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [currentLink, setCurrentLink] = useState<string>(''); // Current endpoint link
   const [, setError] = useState<string | null>(null);
 
@@ -32,38 +29,58 @@ const DNSLeakTest = () => {
     'https://ipv4.icanhazip.com',
     'https://ipv6.icanhazip.com',
     'https://icanhazip.com',
-    'https://ipapi.co/json/',
-    'https://api64.ipify.org?format=json',
     'https://ipinfo.io/json',
     'https://ifconfig.me/all.json',
     'https://api.ip.sb/geoip',
     'https://ipwhois.app/json/',
+    'https://api.ip.sb/geoip',
+    'https://ipwhois.app/json/',
     'https://api.db-ip.com/v2/free/self',
     'https://api.ipify.org?format=json',
-    'https://api64.ipify.org?format=json',
-    'https://ipapi.co/json/',
     'https://jsonip.com/',
   ];
   const totalServers = dnsTestEndpoints.length;
 
-  // Fetch Public IPv4 and IPv6 and set reference ISP and country
+
   useEffect(() => {
     const fetchIPAddresses = async () => {
       try {
-        const ipv4Res = await fetch('https://ipapi.co/json/');
-        const ipv6Res = await fetch('https://api64.ipify.org?format=json');
+        const ipRes = await fetch('https://ipapi.co/json/');
+        const ipResData = await ipRes.json();
 
-        const ipv4Data = await ipv4Res.json();
-        const ipv6Data = await ipv6Res.json();
+        setReferenceServer({
+          ip: ipResData.ip,
+          isp: ipResData.org || ipResData.isp || 'Unknown ISP',
+          country: ipResData.country_name || ipResData.country || 'Unknown',
+          region: ipResData.region || 'Unknown',
+          city: ipResData.city || 'Unknown',
+          version: ipResData.ip.includes(':') ? 'IPv6' : 'IPv4',
+          link: 'https://ipapi.co/json/',
+        });
 
-        setReferenceIPv4(ipv4Data.ip);
-        setReferenceIPv6(ipv6Data.ip);
-        setReferenceISP(ipv4Data.org || ipv4Data.isp || 'Unknown');
-        setReferenceCountry(ipv4Data.country_name || ipv4Data.country || 'Unknown');
+
       } catch (err) {
-        console.error('Failed to fetch public IPs:', err);
-        setError('Failed to fetch Public IPv4/IPv6 addresses.');
+        console.error('Failed to fetch public IP from https://ipapi.co/json/:', err);
+        // setError('Failed to fetch Public IPv4 addresses.');
+        try {
+          const ipRes = await fetch('https://api64.ipify.org?format=json');
+          const ipResData = await ipRes.json();
+          setReferenceServer({
+            ip: ipResData.ip,
+            isp: ipResData.org || ipResData.isp || 'Unknown ISP',
+            country: ipResData.country_name || ipResData.country || 'Unknown',
+            region: ipResData.region || ipResData.regionName || 'Unknown',
+            city: ipResData.city || 'Unknown',
+            version: ipResData.ip.includes(':') ? 'IPv6' : 'IPv4',
+            link: 'https://ipapi.co/json/',
+          });
+        } catch (err) {
+          console.error('Failed to fetch public IP from :https://api64.ipify.org?format=json', err);
+          //  setError('Failed to fetch Public IPv6 addresses.');
+        }
+
       }
+
     };
 
     fetchIPAddresses();
@@ -71,11 +88,12 @@ const DNSLeakTest = () => {
 
   // Test DNS Servers
   useEffect(() => {
+    if (referenceServer && !referenceServer.ip) return;
+
     const testDNSServers = async () => {
       setLoading(true);
       try {
         const servers: DNSServer[] = [];
-
         for (let i = 0; i < dnsTestEndpoints.length; i++) {
           setCurrentTest(i + 1);
           setCurrentLink(dnsTestEndpoints[i]);
@@ -85,11 +103,11 @@ const DNSLeakTest = () => {
           if (data) {
             servers.push({
               ip: data.ip || data.query || data.ipAddress || data.ip_addr || data || 'N/A',
-              isp: data.isp || 'Unknown ISP',
-              country: data.country || 'Unknown',
+              isp: data.org || data.isp || 'Unknown ISP',
+              country: data.country_name || data.country || 'Unknown',
               region: data.region || data.regionName || 'Unknown',
               city: data.city || 'Unknown',
-              version: data.ip?.includes(':') ? 'IPv6' : 'IPv4',
+              version: (data.ip || data.query || data.ipAddress || data.ip_addr || data)?.includes(':') ? 'IPv6' : 'IPv4',
               link: dnsTestEndpoints[i],
             });
           }
@@ -106,42 +124,51 @@ const DNSLeakTest = () => {
     };
 
     testDNSServers();
-  }, []);
+  }, [referenceServer]);
 
-  // Check for DNS Leak
-  const hasDNSLeak = (): { leakDetected: boolean; reason: string } => {
-    if (!dnsServers.length) return { leakDetected: false, reason: '' };
-
-    const mainISP = dnsServers[0]?.isp || '';
-    // const mainCountry = dnsServers[0]?.country || '';
-    const uniqueISPs = new Set(dnsServers.map((server) => server.isp));
-    const uniqueCountries = new Set(dnsServers.map((server) => server.country));
-
-    // Logic for detecting leaks
-    if (uniqueISPs.size > 1) {
-      return {
-        leakDetected: true,
-        reason: 'Multiple ISPs detected. Your DNS requests are being resolved by different providers, which indicates a DNS leak.',
-      };
+  // Check for DNS Leak and provide reasoning
+  const getLeakReason = (server: DNSServer) => {
+    const reasons: string[] = [];
+    // console.log('referenceServer', referenceServer)
+    // console.log('Testserver', server)
+    if (!referenceServer || !referenceServer.ip) {
+      reasons.push('Reference server is not set or invalid.');
+      return reasons;
     }
 
-    if (uniqueCountries.size > 1) {
-      return {
-        leakDetected: true,
-        reason: 'DNS servers are located in multiple countries, which is inconsistent with your VPN/proxy configuration.',
-      };
+    if (referenceServer.version !== server.version) {
+      reasons.push(
+        `IP version mismatch: Expected ${referenceServer.version}, but got ${server.version}.`
+      );
     }
 
-    if (mainISP.includes('Unknown') || mainISP.includes('ISP')) {
-      return {
-        leakDetected: true,
-        reason: 'DNS requests are being resolved by your ISP, bypassing your VPN or secure DNS settings.',
-      };
+    if (referenceServer.version === server.version && referenceServer.ip !== server.ip) {
+      reasons.push(
+        `IP mismatch: Expected ${referenceServer.ip}, but got ${server.ip}.`
+      );
     }
 
-    return { leakDetected: false, reason: '' };
+    if (server.isp !== 'Unknown ISP' && referenceServer.isp !== 'Unknown ISP' && referenceServer.isp !== server.isp) {
+      reasons.push(
+        `ISP mismatch: Expected ${referenceServer.isp}, but got ${server.isp}.`
+      );
+    }
+
+    if (server.country !== 'Unknown' && referenceServer.country !== 'Unknown' && server.country !== referenceServer.country) {
+      reasons.push(`Mismatched Country: Expected ${referenceServer.country}, but got ${server.country}`);
+    }
+    if (server.city !== 'Unknown' && referenceServer.city !== 'Unknown' && server.city !== referenceServer.city) {
+      reasons.push(`Mismatched Country: Expected ${referenceServer.city}, but got ${server.city}`);
+    }
+    if (server.region !== 'Unknown' && referenceServer.region !== 'Unknown' && server.region !== referenceServer.region) {
+      reasons.push(`Mismatched Country: Expected ${referenceServer.region}, but got ${server.region}`);
+    }
+    return reasons;
   };
 
+  // const hasDNSLeak = (): boolean => {
+  //   return dnsServers.some((server) => getLeakReason(server) !== '');
+  // };
 
   return (
     <div className="p-6 bg-gray-100 rounded-lg shadow-md">
@@ -151,55 +178,64 @@ const DNSLeakTest = () => {
 
       {/* Public IPv4 and IPv6 */}
       <div className="p-4 bg-white rounded-lg shadow-md mb-4">
-        <h4 className="text-lg font-semibold text-gray-700 flex items-center mb-2">
-          <FiGlobe className="w-5 h-5 mr-2 text-gray-500" /> Public IPs
-        </h4>
-        <p>
-          <strong>IPv4:</strong> {referenceIPv4 || <Shimmer />}
-        </p>
-        <p>
-          <strong>IPv6:</strong> {referenceIPv6 || <Shimmer />}
-        </p>
+        {referenceServer ? (
+          <>
+            <h4 className="text-lg font-semibold text-gray-700 flex items-center mb-2">
+              <FiGlobe className="w-5 h-5 mr-2 text-gray-500" /> Public IPs
+            </h4>
+            <div>
+              <strong>IP:</strong> {referenceServer.ip || <Shimmer />}
+            </div>
+            {referenceServer.isp && (
+              <div>
+                <strong>ISP:</strong> {referenceServer.isp}
+              </div>
+            )}
+            {referenceServer.country && (
+              <div>
+                <strong>Country:</strong> {referenceServer.country}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-gray-500">No reference server information available.</div>
+        )}
       </div>
 
       {/* Progress Bar */}
       {loading && (
         <div className="mb-4">
-          <p className="text-gray-600 mb-2 text-sm">
+          <div className="text-gray-600 mb-2 text-sm">
             Testing DNS Server {currentTest} of {totalServers}...
-          </p>
+          </div>
           <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div
               className="bg-blue-500 h-2.5 rounded-full"
               style={{ width: `${(currentTest / totalServers) * 100}%` }}
             ></div>
           </div>
-          <p className="text-gray-500 mt-2 text-sm text-center">
+          <div className="text-gray-500 mt-2 text-sm text-center">
             Current Server: {currentLink}
-          </p>
+          </div>
         </div>
       )}
 
       {/* DNS Leak Result */}
-      {dnsServers.length > 0 && (
+      {/* {dnsServers.length > 0 && (
         <div className="mt-4">
-          {(() => {
-            const { leakDetected, reason } = hasDNSLeak();
-            return leakDetected ? (
-              <div className="text-red-600 flex items-center mb-4">
-                <FiAlertCircle className="w-6 h-6 mr-2" />
-                <p>⚠ DNS Leak Detected! {reason}</p>
-              </div>
-            ) : (
-              <div className="text-green-600 flex items-center mb-4">
-                <FiCheckCircle className="w-6 h-6 mr-2" />
-                <p>✅ No DNS Leak Detected. Your DNS servers are secure.</p>
-              </div>
-            );
-          })()}
+          {hasDNSLeak() ? (
+            <div className="text-red-600 flex items-center mb-4">
+              <FiAlertCircle className="w-6 h-6 mr-2" />
+              <div>⚠ DNS Leak Detected! Check the rows below for details.</div>
+            </div>
+          ) : (
+            <div className="text-green-600 flex items-center mb-4">
+              <FiCheckCircle className="w-6 h-6 mr-2" />
+              <div>✅ No DNS Leak Detected. Your DNS servers are secure.</div>
+            </div>
+          )}
         </div>
-      )}
-
+      )} */}
 
       {/* Results Table */}
       <table className="w-full table-auto border-collapse mt-4 bg-white rounded-lg shadow-md">
@@ -216,25 +252,36 @@ const DNSLeakTest = () => {
         </thead>
         <tbody>
           {dnsServers.map((server, index) => {
-            const isLeak = dnsServers[0]?.isp !== server.isp; // Compare with reference ISP
+            const leakReason = getLeakReason(server);
+            // console.log("index", index, 'leakReason', leakReason)
             return (
-              <tr
-                key={index}
-                className={`hover:bg-yellow-200 ${isLeak ? 'bg-red-100' : 'bg-white' // Highlight leak rows
-                  }`}
-              >
-                <td className="p-2 border">{index + 1}</td>
-                <td className="p-2 border"><CountryFlag ip={server.ip} /></td>
-                <td className="p-2 border">{server.ip}</td>
-                <td className="p-2 border">{server.isp}</td>
-                <td className="p-2 border">
-                  {`${server.city}, ${server.region}, ${server.country}`}
-                </td>
-                <td className="p-2 border">{server.version}</td>
-                <td className="p-2 border">
-                  <Modal title={server.link} server={server.link} />
-                </td>
-              </tr>
+              <>
+                {/* Main Row */}
+                <tr key={index} className={`hover:bg-yellow-200 ${leakReason.length > 0 ? 'bg-red-100' : 'bg-white'}`}>
+                  <td className="p-2 border">{index + 1}</td>
+                  <td className="p-2 border"><CountryFlag ip={server.ip} /></td>
+                  <td className="p-2 border">{server.ip}</td>
+                  <td className="p-2 border">{server.isp}</td>
+                  <td className="p-2 border">{`${server.city}, ${server.region}, ${server.country}`}</td>
+                  <td className="p-2 border">{server.version}</td>
+                  <td className="p-2 border"><Modal title={server.link} server={server.link} /></td>
+                </tr>
+
+                {/* Leak Reason Row */}
+                {leakReason.length > 0 && (
+                  leakReason.map((reason, i) => {
+                    return (
+                      <tr key={i}>
+                        <td colSpan={7} className="p-2 border text-red-600 text-sm bg-red-50">
+                          {i + 1} - {reason}
+                        </td>
+                      </tr>
+                    );
+
+                  })
+                )}
+              </>
+
             );
           })}
         </tbody>
