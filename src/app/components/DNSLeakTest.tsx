@@ -143,6 +143,7 @@ const DNSLeakTest = () => {
     if (isTestStarted) {
       testDNSServers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTestStarted, referenceServer]);
 
   // Check for DNS Leak and provide reasoning
