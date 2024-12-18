@@ -64,8 +64,8 @@ const IPLeaksTest = () => {
         const ipv4Data = await ipv4Res.json();
         setIPv4(ipv4Data.ip);
 
-        // Fetch Geolocation Data
-        const geoRes = await fetch(`http://ip-api.com/json/${ipv4Data.ip}`);
+        // Fetch Geolocation Data using HTTPS
+        const geoRes = await fetch(`https://ip-api.com/json/${ipv4Data.ip}`);
         if (!geoRes.ok) throw new Error('Failed to fetch Geolocation Data');
         const geoResult = await geoRes.json();
         setGeoData(geoResult);
