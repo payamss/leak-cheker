@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FiServer, FiAlertCircle, FiGlobe, FiCheckCircle } from 'react-icons/fi';
+import { FiServer, FiAlertCircle, FiGlobe, FiCheckCircle, FiPlay, FiLoader } from 'react-icons/fi';
 import Shimmer from './Shimmer';
 import { fetchDNSServers } from '../../../utils/dnsTestApi';
 import Modal from './ModalComponent';
 import CountryFlag from './CountrlFlagComponent';
 import React from 'react';
+import DNSLeakInfoBox from './DNSLeakInfoBox';
 
 type DNSServer = {
   ip: string;
@@ -25,6 +26,7 @@ const DNSLeakTest = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentLink, setCurrentLink] = useState<string>(''); // Current endpoint link
   const [, setError] = useState<string | null>(null);
+  const [isTestStarted, setIsTestStarted] = useState<boolean>(false); // New state
 
   const dnsTestEndpoints = [
     'https://ipv4.icanhazip.com',
@@ -88,49 +90,53 @@ const DNSLeakTest = () => {
   }, []);
 
   // Test DNS Servers
+
+  const testDNSServers = async () => {
+    setLoading(true);
+    try {
+      const servers: DNSServer[] = [];
+      for (let i = 0; i < dnsTestEndpoints.length; i++) {
+        setCurrentTest(i + 1);
+        setCurrentLink(dnsTestEndpoints[i]);
+
+        try {
+          const data = await fetchDNSServers(dnsTestEndpoints[i]);
+
+          if (data) {
+            servers.push({
+              ip: data.ip || data.query || data.ipAddress || data.ip_addr || data || 'N/A',
+              isp: data.org || data.isp || 'Unknown ISP',
+              country: data.country_name || data.country || 'Unknown',
+              region: data.region || data.regionName || 'Unknown',
+              city: data.city || 'Unknown',
+              version: (data.ip || data.query || data.ipAddress || data.ip_addr || data)?.includes(':') ? 'IPv6' : 'IPv4',
+              link: dnsTestEndpoints[i],
+            });
+          }
+
+          setDNSServers([...servers]);
+        } catch (err) {
+          console.error(err);
+
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to test DNS servers. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Trigger DNS Leak Test when `isTestStarted` becomes true
   useEffect(() => {
     if (referenceServer && !referenceServer.ip) return;
 
-    const testDNSServers = async () => {
-      setLoading(true);
-      try {
-        const servers: DNSServer[] = [];
-        for (let i = 0; i < dnsTestEndpoints.length; i++) {
-          setCurrentTest(i + 1);
-          setCurrentLink(dnsTestEndpoints[i]);
-
-          try {
-            const data = await fetchDNSServers(dnsTestEndpoints[i]);
-
-            if (data) {
-              servers.push({
-                ip: data.ip || data.query || data.ipAddress || data.ip_addr || data || 'N/A',
-                isp: data.org || data.isp || 'Unknown ISP',
-                country: data.country_name || data.country || 'Unknown',
-                region: data.region || data.regionName || 'Unknown',
-                city: data.city || 'Unknown',
-                version: (data.ip || data.query || data.ipAddress || data.ip_addr || data)?.includes(':') ? 'IPv6' : 'IPv4',
-                link: dnsTestEndpoints[i],
-              });
-            }
-
-            setDNSServers([...servers]);
-          } catch (err) {
-            console.error(err);
-
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
-        }
-      } catch (err) {
-        console.error(err);
-        setError('Failed to test DNS servers. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    testDNSServers();
-  }, [referenceServer]);
+    if (isTestStarted) {
+      testDNSServers();
+    }
+  }, [isTestStarted, referenceServer]);
 
   // Check for DNS Leak and provide reasoning
   const getLeakReason = (server: DNSServer): { reasons: string[]; severity: 'critical' | 'warning' | null } => {
@@ -202,19 +208,37 @@ const DNSLeakTest = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-100 rounded-lg shadow-md">
+    <div className="p-6 bg-gray-100 rounded-lg shadow-xl">
       <h3 className="text-3xl font-bold text-blue-600 mb-6 flex items-center">
         <FiServer className="w-6 h-6 mr-2" /> DNS Leak Test
       </h3>
 
+      {/* Expandable Info Box */}
+      <DNSLeakInfoBox />
+
+
       {/* Public IPv4 and IPv6 */}
-      <div className="p-4 bg-white rounded-lg shadow-md mb-4">
+      <div className="p-4 bg-white rounded-lg shadow-md mb-4 space-y-2">
         {referenceServer ? (
           <>
-            <h4 className="text-lg font-semibold text-gray-700 flex items-center mb-2">
-              <FiGlobe className="w-5 h-5 mr-2 text-gray-500" /> Public IPs
+            <h4 className="text-lg font-semibold text-gray-700 flex items-center justify-between ">
+              <div className="flex items-center">      <FiGlobe className="w-5 h-5 mr-2 text-gray-500" /> Public IPs</div>
+
+              <div className=" items-center justify-center text-center">
+                <div className="">Run Test</div>
+                <button
+                  onClick={() => setIsTestStarted(true)}
+                  className="px-5 py-5 bg-blue-600 text-white  hover:bg-blue-500 transition rounded-full"
+                  disabled={loading}
+                >
+                  {loading ? <FiLoader className="animate-spin text-white w-5 h-5" />
+                    : <FiPlay className="w-5 h-5  text-white" />}
+                </button>
+
+              </div>
+
             </h4>
-            <div>
+            <div >
               <strong>IP:</strong> {referenceServer.ip || <Shimmer />}
             </div>
             {referenceServer.isp && (
@@ -228,8 +252,8 @@ const DNSLeakTest = () => {
               </div>
             )}
           </>
-        ) : (
-          <div className="text-gray-500">No reference server information available.</div>
+        ) : (<Shimmer text="Loading Reference Server ..." />
+
         )}
       </div>
 
