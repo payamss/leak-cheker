@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FiSettings, FiX } from 'react-icons/fi';
+import { FiInfo, FiX } from 'react-icons/fi';
 
 interface ModalProps {
   title?: string; // Title of the modal
@@ -15,15 +15,15 @@ const Modal: React.FC<ModalProps> = ({ title = 'DNS Server', server }) => {
   const toggleModal = () => setIsOpen((prev) => !prev);
 
   return (
-    <div className="relative z-20">
+    <div className="relative z-60">
       {/* Button to open modal */}
       <button
         onClick={toggleModal}
-        className={`p-2 rounded-full bg-gray-700 text-gray-200 hover:bg-red-600 
+        className={`p-2 rounded-full text-blue-700  hover:text-blue-800
           transition-transform duration-300 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
         aria-label="Open Modal"
       >
-        <FiSettings size={1} />
+        <FiInfo size={24} />
       </button>
 
       {/* Modal */}

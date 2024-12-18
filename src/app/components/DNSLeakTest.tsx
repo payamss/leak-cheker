@@ -6,6 +6,7 @@ import Shimmer from './Shimmer';
 import { fetchDNSServers } from '../../../utils/dnsTestApi';
 import Modal from './ModalComponent';
 import CountryFlag from './CountrlFlagComponent';
+import React from 'react';
 
 type DNSServer = {
   ip: string;
@@ -98,22 +99,27 @@ const DNSLeakTest = () => {
           setCurrentTest(i + 1);
           setCurrentLink(dnsTestEndpoints[i]);
 
-          const data = await fetchDNSServers(dnsTestEndpoints[i]);
+          try {
+            const data = await fetchDNSServers(dnsTestEndpoints[i]);
 
-          if (data) {
-            servers.push({
-              ip: data.ip || data.query || data.ipAddress || data.ip_addr || data || 'N/A',
-              isp: data.org || data.isp || 'Unknown ISP',
-              country: data.country_name || data.country || 'Unknown',
-              region: data.region || data.regionName || 'Unknown',
-              city: data.city || 'Unknown',
-              version: (data.ip || data.query || data.ipAddress || data.ip_addr || data)?.includes(':') ? 'IPv6' : 'IPv4',
-              link: dnsTestEndpoints[i],
-            });
+            if (data) {
+              servers.push({
+                ip: data.ip || data.query || data.ipAddress || data.ip_addr || data || 'N/A',
+                isp: data.org || data.isp || 'Unknown ISP',
+                country: data.country_name || data.country || 'Unknown',
+                region: data.region || data.regionName || 'Unknown',
+                city: data.city || 'Unknown',
+                version: (data.ip || data.query || data.ipAddress || data.ip_addr || data)?.includes(':') ? 'IPv6' : 'IPv4',
+                link: dnsTestEndpoints[i],
+              });
+            }
+
+            setDNSServers([...servers]);
+          } catch (err) {
+            console.error(err);
+
           }
-
-          setDNSServers([...servers]);
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate delay
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
         }
       } catch (err) {
         console.error(err);
@@ -168,7 +174,7 @@ const DNSLeakTest = () => {
       referenceServer.country !== 'Unknown' &&
       server.country !== referenceServer.country
     ) {
-      reasons.push(`Mismatched Country: Expected ${referenceServer.country}, but got ${server.country}.`);
+      reasons.push(`Country mismatch: Expected ${referenceServer.country}, but got ${server.country}.`);
       severity = severity || 'warning';
     }
 
@@ -178,7 +184,7 @@ const DNSLeakTest = () => {
       referenceServer.city !== 'Unknown' &&
       server.city !== referenceServer.city
     ) {
-      reasons.push(`Mismatched City: Expected ${referenceServer.city}, but got ${server.city}.`);
+      reasons.push(`City mismatch: Expected ${referenceServer.city}, but got ${server.city}.`);
       severity = severity || 'warning';
     }
 
@@ -188,18 +194,12 @@ const DNSLeakTest = () => {
       referenceServer.region !== 'Unknown' &&
       server.region !== referenceServer.region
     ) {
-      reasons.push(`Mismatched Region: Expected ${referenceServer.region}, but got ${server.region}.`);
+      reasons.push(`Region mismatch: Expected ${referenceServer.region}, but got ${server.region}.`);
       severity = severity || 'warning';
     }
 
     return { reasons, severity };
   };
-
-
-
-  // const hasDNSLeak = (): boolean => {
-  //   return dnsServers.some((server) => getLeakReason(server) !== '');
-  // };
 
   return (
     <div className="p-6 bg-gray-100 rounded-lg shadow-md">
@@ -252,26 +252,41 @@ const DNSLeakTest = () => {
       )}
 
       {/* DNS Leak Result */}
-      {/* {dnsServers.length > 0 && (
+      {dnsServers.length > 0 && (
         <div className="mt-4">
-          {hasDNSLeak() ? (
+          {dnsServers.some((server) => {
+            const { severity } = getLeakReason(server);
+            return severity === 'critical';
+          }) ? (
+            // Critical Leak Detected
             <div className="text-red-600 flex items-center mb-4">
               <FiAlertCircle className="w-6 h-6 mr-2" />
-              <div>⚠ DNS Leak Detected! Check the rows below for details.</div>
+              <div>⚠ DNS Leak Detected! Critical issues found. Check the rows below for details.</div>
+            </div>
+          ) : dnsServers.some((server) => {
+            const { severity } = getLeakReason(server);
+            return severity === 'warning';
+          }) ? (
+            // Warning Only
+            <div className="text-yellow-600 flex items-center mb-4">
+              <FiAlertCircle className="w-6 h-6 mr-2" />
+              <div>⚠ DNS Leak Warning! Non-critical issues found. Review the rows below.</div>
             </div>
           ) : (
+            // No Leak Detected
             <div className="text-green-600 flex items-center mb-4">
               <FiCheckCircle className="w-6 h-6 mr-2" />
               <div>✅ No DNS Leak Detected. Your DNS servers are secure.</div>
             </div>
           )}
         </div>
-      )} */}
+      )}
+
 
       {/* Results Table */}
       <table className="w-full table-auto border-collapse mt-4 bg-white rounded-lg shadow-md">
         <thead>
-          <tr className="bg-gray-200 text-left">
+          <tr className="bg-gray-200 text-center">
             <th className="p-2 border">#</th>
             <th className="p-2 border">Loc</th>
             <th className="p-2 border">IP Address</th>
@@ -289,8 +304,9 @@ const DNSLeakTest = () => {
             const rowClass = severity === 'critical'
               ? 'bg-red-100 hover:bg-red-200'
               : severity === 'warning'
-                ? 'bg-yellow-100 hover:bg-yellow-200'
-                : 'bg-white hover:bg-gray-100';
+                ? 'bg-yellow-100 hover:bg-yellow-200 text-center'
+                : 'bg-white hover:bg-gray-100 text-center';
+
             const rowClass2 = severity === 'critical'
               ? 'bg-red-50 hover:bg-red-100 p-2 border text-red-600 text-sm '
               : severity === 'warning'
@@ -298,9 +314,9 @@ const DNSLeakTest = () => {
                 : 'bg-white hover:bg-gray-100';
 
             return (
-              <>
+              <React.Fragment key={`server-${index}`}>
                 {/* Main Row */}
-                <tr key={index} className={`${rowClass}`}>
+                <tr key={`main-row-${index}`} className={`${rowClass}`}>
                   <td className="p-2 border">{index + 1}</td>
                   <td className="p-2 border"><CountryFlag ip={server.ip} /></td>
                   <td className="p-2 border">{server.ip}</td>
@@ -313,17 +329,18 @@ const DNSLeakTest = () => {
                 {/* Leak Reason Row */}
                 {reasons.length > 0 && (
                   reasons.map((reason, i) => (
-                    <tr key={`reason-${index}-${i}`}>
+                    <tr key={`reason-row-${index}-${i}`}>
                       <td colSpan={7} className={rowClass2}>
                         {i + 1} - {reason}
                       </td>
                     </tr>
                   ))
                 )}
-              </>
+              </React.Fragment>
             );
           })}
         </tbody>
+
 
       </table>
     </div>
