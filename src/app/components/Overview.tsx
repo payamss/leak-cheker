@@ -6,10 +6,10 @@ const Overview = () => {
         Welcome to the Personal Security Test Suite. Use the navigation tabs above to run different security tests:
       </p>
       <ul className="list-disc list-inside mt-4 text-gray-800">
-        <li>IP Leaks Test</li>
-        <li>DNS Leak Test</li>
-        <li>WebRTC Leak Test</li>
-        <li>Geolocation Test</li>
+        <li>IP Leaks</li>
+        <li>DNS Leaks</li>
+        <li>WebRTC Leaks</li>
+        <li>Geolocation Leaks</li>
       </ul>
     </div>
   );
