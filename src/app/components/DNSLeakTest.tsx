@@ -224,29 +224,30 @@ const DNSLeakTest = () => {
       {/* Expandable Info Box */}
       <DNSLeakInfoBox />
 
-
       {/* Public IPv4 and IPv6 */}
-      <div className="p-4 bg-white rounded-lg shadow-md mb-4 space-y-2">
+      <div className="p-4 bg-white rounded-lg shadow-md mb-4 space-y-4">
         {referenceServer ? (
           <>
-            <h4 className="text-lg font-semibold text-gray-700 flex items-center justify-between ">
-              <div className="flex items-center">      <FiGlobe className="w-5 h-5 mr-2 text-gray-500" /> Public IPs</div>
-
-              <div className=" items-center justify-center text-center">
-                <div className="">Run Test</div>
+            <h4 className="text-lg font-semibold text-gray-700 flex flex-wrap items-center justify-between space-y-2 sm:space-y-0">
+              <div className="flex items-center">
+                <FiGlobe className="w-5 h-5 mr-2 text-gray-500" /> Public IPs
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <div>Run Test</div>
                 <button
                   onClick={() => setIsTestStarted(true)}
-                  className="px-5 py-5 bg-blue-600 text-white  hover:bg-blue-500 transition rounded-full"
+                  className="px-4 py-3 bg-blue-600 text-white hover:bg-blue-500 transition rounded-full flex items-center justify-center"
                   disabled={loading}
                 >
-                  {loading ? <FiLoader className="animate-spin text-white w-5 h-5" />
-                    : <FiPlay className="w-5 h-5  text-white" />}
+                  {loading ? (
+                    <FiLoader className="animate-spin text-white w-5 h-5" />
+                  ) : (
+                    <FiPlay className="w-5 h-5 text-white" />
+                  )}
                 </button>
-
               </div>
-
             </h4>
-            <div >
+            <div>
               <strong>IP:</strong> {referenceServer.ip || <Shimmer />}
             </div>
             {referenceServer.isp && (
@@ -260,8 +261,8 @@ const DNSLeakTest = () => {
               </div>
             )}
           </>
-        ) : (<Shimmer text="Loading Reference Server ..." />
-
+        ) : (
+          <Shimmer text="Loading Reference Server ..." />
         )}
       </div>
 
@@ -314,68 +315,73 @@ const DNSLeakTest = () => {
         </div>
       )}
 
-
       {/* Results Table */}
-      <table className="w-full table-auto border-collapse mt-4 bg-white rounded-lg shadow-md">
-        <thead>
-          <tr className="bg-gray-200 text-center">
-            <th className="p-2 border">#</th>
-            <th className="p-2 border">Loc</th>
-            <th className="p-2 border">IP Address</th>
-            <th className="p-2 border">ISP</th>
-            <th className="p-2 border">Location</th>
-            <th className="p-2 border">Version</th>
-            <th className="p-2 border">Link</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dnsServers.map((server, index) => {
-            const { reasons, severity } = getLeakReason(server);
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto border-collapse mt-4 bg-white rounded-lg shadow-md">
+          <thead>
+            <tr className="bg-gray-200 text-center">
+              <th className="p-2 border">#</th>
+              <th className="p-2 border">Loc</th>
+              <th className="p-2 border">IP Address</th>
+              <th className="p-2 border">ISP</th>
+              <th className="p-2 border">Location</th>
+              <th className="p-2 border">Version</th>
+              <th className="p-2 border">Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dnsServers.map((server, index) => {
+              const { reasons, severity } = getLeakReason(server);
 
-            // Determine row color based on severity
-            const rowClass = severity === 'critical'
-              ? 'bg-red-100 hover:bg-red-200'
-              : severity === 'warning'
-                ? 'bg-yellow-100 hover:bg-yellow-200 text-center'
-                : 'bg-white hover:bg-gray-100 text-center';
+              // Determine row color based on severity
+              const rowClass =
+                severity === 'critical'
+                  ? 'bg-red-100 hover:bg-red-200'
+                  : severity === 'warning'
+                    ? 'bg-yellow-100 hover:bg-yellow-200 text-center'
+                    : 'bg-white hover:bg-gray-100 text-center';
 
-            const rowClass2 = severity === 'critical'
-              ? 'bg-red-50 hover:bg-red-100 p-2 border text-red-600 text-sm '
-              : severity === 'warning'
-                ? 'bg-yellow-50 hover:bg-yellow-100 p-2 border text-yellow-600 text-sm '
-                : 'bg-white hover:bg-gray-100';
+              const rowClass2 =
+                severity === 'critical'
+                  ? 'bg-red-50 hover:bg-red-100 p-2 border text-red-600 text-sm'
+                  : severity === 'warning'
+                    ? 'bg-yellow-50 hover:bg-yellow-100 p-2 border text-yellow-600 text-sm'
+                    : 'bg-white hover:bg-gray-100';
 
-            return (
-              <React.Fragment key={`server-${index}`}>
-                {/* Main Row */}
-                <tr key={`main-row-${index}`} className={`${rowClass}`}>
-                  <td className="p-2 border">{index + 1}</td>
-                  <td className="p-2 border"><CountryFlag ip={server.ip} /></td>
-                  <td className="p-2 border">{server.ip}</td>
-                  <td className="p-2 border">{server.isp}</td>
-                  <td className="p-2 border">{`${server.city}, ${server.region}, ${server.country}`}</td>
-                  <td className="p-2 border">{server.version}</td>
-                  <td className="p-2 border"><Modal title={server.link} server={server.link} /></td>
-                </tr>
+              return (
+                <React.Fragment key={`server-${index}`}>
+                  {/* Main Row */}
+                  <tr key={`main-row-${index}`} className={`${rowClass}`}>
+                    <td className="p-2 border">{index + 1}</td>
+                    <td className="p-2 border">
+                      <CountryFlag ip={server.ip} />
+                    </td>
+                    <td className="p-2 border">{server.ip}</td>
+                    <td className="p-2 border">{server.isp}</td>
+                    <td className="p-2 border">{`${server.city}, ${server.region}, ${server.country}`}</td>
+                    <td className="p-2 border">{server.version}</td>
+                    <td className="p-2 border">
+                      <Modal title={server.link} server={server.link} />
+                    </td>
+                  </tr>
 
-                {/* Leak Reason Row */}
-                {reasons.length > 0 && (
-                  reasons.map((reason, i) => (
-                    <tr key={`reason-row-${index}-${i}`}>
-                      <td colSpan={7} className={rowClass2}>
-                        {i + 1} - {reason}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </React.Fragment>
-            );
-          })}
-        </tbody>
-
-
-      </table>
+                  {/* Leak Reason Row */}
+                  {reasons.length > 0 &&
+                    reasons.map((reason, i) => (
+                      <tr key={`reason-row-${index}-${i}`}>
+                        <td colSpan={7} className={rowClass2}>
+                          {i + 1} - {reason}
+                        </td>
+                      </tr>
+                    ))}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
+
   );
 };
 
