@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { FiServer, FiAlertCircle, FiGlobe, FiCheckCircle, FiPlay, FiLoader } from 'react-icons/fi';
 import Shimmer from './Shimmer';
 import { fetchDNSServers } from '../../../utils/dnsTestApi';
-import Modal from './ModalComponent';
-import CountryFlag from './CountrlFlagComponent';
+const Modal = dynamic(() => import('./ModalComponent'), { ssr: false });
+const CountryFlag = dynamic(() => import('./CountrlFlagComponent'), { ssr: false });
 import React from 'react';
 import DNSLeakInfoBox from './DNSLeakInfoBox';
+import dynamic from 'next/dynamic';
 
 type DNSServer = {
   ip: string;
@@ -47,6 +48,12 @@ const DNSLeakTest = () => {
 
   useEffect(() => {
     const fetchIPAddresses = async () => {
+
+      if (typeof window === 'undefined') {
+        return; // Skip fetching on the server
+      }
+
+
       try {
         const ipRes = await fetch('https://ipapi.co/json/');
         const ipResData = await ipRes.json();

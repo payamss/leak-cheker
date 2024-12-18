@@ -3,6 +3,12 @@ export const fetchDNSServers = async (
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ ip?: string; [key: string]: any } | null> => {
   try {
+
+        if (typeof window === 'undefined') {
+        console.error('fetchDNSServers should only run on the client');
+        return null;
+    }
+    
     console.log(`Fetching DNS server info from: ${apiUrl}`);
     const response = await fetch(apiUrl);
 
