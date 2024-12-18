@@ -16,7 +16,7 @@ COPY --from=builder /app/public /app/public
 
 RUN npm ci --only=production
 
-EXPOSE 6000
+EXPOSE 3000
 ENV NODE_ENV=production
 
 CMD ["npm", "start"]
