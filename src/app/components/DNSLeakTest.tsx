@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { FiServer, FiAlertCircle, FiGlobe, FiCheckCircle, FiPlay, FiLoader } from 'react-icons/fi';
 import Shimmer from './Shimmer';
 import { fetchDNSServers } from '../../../utils/dnsTestApi';
-const Modal = dynamic(() => import('./ModalComponent'), { ssr: false });
-const CountryFlag = dynamic(() => import('./CountrlFlagComponent'), { ssr: false });
+
 import React from 'react';
 import DNSLeakInfoBox from './DNSLeakInfoBox';
-import dynamic from 'next/dynamic';
+import CountryFlag from './CountrlFlagComponent';
+import Modal from './ModalComponent';
 
 type DNSServer = {
   ip: string;
