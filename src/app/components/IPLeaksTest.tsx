@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { FiGlobe, FiMapPin, FiServer, FiAlertCircle, FiClock, FiMap } from 'react-icons/fi';
-import CustomMap from './CustomMap';
+// import CustomMap from './CustomMap';
 
 type GeolocationData = {
   query: string;
@@ -212,13 +212,13 @@ const IPLeaksTest = () => {
               </div>
 
               {/* Map Section */}
-              <div className="rounded-lg overflow-hidden shadow-sm">
+              {/* <div className="rounded-lg overflow-hidden shadow-sm">
                 <CustomMap
                   latitude={geoData?.lat || 0}
                   longitude={geoData?.lon || 0}
                   accuracy={1000} // Using approximate accuracy
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 

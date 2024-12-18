@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import CustomMap from './CustomMap';
+// import CustomMap from './CustomMap';
 import LocationInfo from './LocationInfo';
 
 type LocationData = {
@@ -56,13 +56,13 @@ const GeoLocationTest = () => {
           />
 
           {/* Leaflet Map */}
-          <div className="mt-4 h-64 w-full rounded-md overflow-hidden">
+          {/* <div className="mt-4 h-64 w-full rounded-md overflow-hidden">
             <CustomMap
               latitude={location.latitude}
               longitude={location.longitude}
               accuracy={location.accuracy}
             />
-          </div>
+          </div> */}
         </>
       ) : (
         <p>Fetching location data...</p>
