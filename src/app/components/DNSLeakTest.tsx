@@ -18,15 +18,16 @@ type DNSServer = {
 };
 
 const DNSLeakTest = () => {
-  const [ipv4, setIPv4] = useState<string | null>(null);
-  const [ipv6, setIPv6] = useState<string | null>(null);
+  const [referenceIPv4, setReferenceIPv4] = useState<string | null>(null);
+  const [referenceIPv6, setReferenceIPv6] = useState<string | null>(null);
+  const [referenceISP, setReferenceISP] = useState<string | null>(null);
+  const [referenceCountry, setReferenceCountry] = useState<string | null>(null);
   const [dnsServers, setDNSServers] = useState<DNSServer[]>([]);
   const [currentTest, setCurrentTest] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentLink, setCurrentLink] = useState<string>(''); // Current endpoint link
   const [, setError] = useState<string | null>(null);
 
-  // DNS Test Endpoints
   const dnsTestEndpoints = [
     'https://ipv4.icanhazip.com',
     'https://ipv6.icanhazip.com',
@@ -35,8 +36,8 @@ const DNSLeakTest = () => {
     'https://api64.ipify.org?format=json',
     'https://ipinfo.io/json',
     'https://ifconfig.me/all.json',
-    // 'https://api.ip.sb/geoip',
-    // 'https://ipwhois.app/json/',
+    'https://api.ip.sb/geoip',
+    'https://ipwhois.app/json/',
     'https://api.db-ip.com/v2/free/self',
     'https://api.ipify.org?format=json',
     'https://api64.ipify.org?format=json',
@@ -45,18 +46,20 @@ const DNSLeakTest = () => {
   ];
   const totalServers = dnsTestEndpoints.length;
 
-  // Fetch Public IPv4 and IPv6 Addresses
+  // Fetch Public IPv4 and IPv6 and set reference ISP and country
   useEffect(() => {
     const fetchIPAddresses = async () => {
       try {
-        const ipv4Res = await fetch('https://api.ipify.org?format=json');
+        const ipv4Res = await fetch('https://ipapi.co/json/');
         const ipv6Res = await fetch('https://api64.ipify.org?format=json');
 
         const ipv4Data = await ipv4Res.json();
         const ipv6Data = await ipv6Res.json();
 
-        setIPv4(ipv4Data.ip);
-        setIPv6(ipv6Data.ip);
+        setReferenceIPv4(ipv4Data.ip);
+        setReferenceIPv6(ipv6Data.ip);
+        setReferenceISP(ipv4Data.org || ipv4Data.isp || 'Unknown');
+        setReferenceCountry(ipv4Data.country_name || ipv4Data.country || 'Unknown');
       } catch (err) {
         console.error('Failed to fetch public IPs:', err);
         setError('Failed to fetch Public IPv4/IPv6 addresses.');
@@ -66,16 +69,16 @@ const DNSLeakTest = () => {
     fetchIPAddresses();
   }, []);
 
-  // Test DNS Servers One by One
+  // Test DNS Servers
   useEffect(() => {
     const testDNSServers = async () => {
       setLoading(true);
       try {
         const servers: DNSServer[] = [];
 
-        for (let i = 0; i < dnsTestEndpoints.length && i < totalServers; i++) {
+        for (let i = 0; i < dnsTestEndpoints.length; i++) {
           setCurrentTest(i + 1);
-          setCurrentLink(dnsTestEndpoints[i]); // Track current link
+          setCurrentLink(dnsTestEndpoints[i]);
 
           const data = await fetchDNSServers(dnsTestEndpoints[i]);
 
@@ -152,10 +155,10 @@ const DNSLeakTest = () => {
           <FiGlobe className="w-5 h-5 mr-2 text-gray-500" /> Public IPs
         </h4>
         <p>
-          <strong>IPv4:</strong> {ipv4 || <Shimmer />}
+          <strong>IPv4:</strong> {referenceIPv4 || <Shimmer />}
         </p>
         <p>
-          <strong>IPv6:</strong> {ipv6 || <Shimmer />}
+          <strong>IPv6:</strong> {referenceIPv6 || <Shimmer />}
         </p>
       </div>
 
@@ -235,7 +238,6 @@ const DNSLeakTest = () => {
             );
           })}
         </tbody>
-
       </table>
     </div>
   );
