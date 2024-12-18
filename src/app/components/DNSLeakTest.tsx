@@ -127,44 +127,75 @@ const DNSLeakTest = () => {
   }, [referenceServer]);
 
   // Check for DNS Leak and provide reasoning
-  const getLeakReason = (server: DNSServer) => {
+  const getLeakReason = (server: DNSServer): { reasons: string[]; severity: 'critical' | 'warning' | null } => {
     const reasons: string[] = [];
-    // console.log('referenceServer', referenceServer)
-    // console.log('Testserver', server)
+    let severity: 'critical' | 'warning' | null = null;
+
     if (!referenceServer || !referenceServer.ip) {
       reasons.push('Reference server is not set or invalid.');
-      return reasons;
+      severity = 'critical';
+      return { reasons, severity };
     }
 
+    const normalizeIP = (ip: string) => ip.trim();
+
+    // Warning: Version mismatch
     if (referenceServer.version !== server.version) {
-      reasons.push(
-        `IP version mismatch: Expected ${referenceServer.version}, but got ${server.version}.`
-      );
+      reasons.push(`IP version mismatch: Expected ${referenceServer.version}, but got ${server.version}.`);
+      severity = severity || 'warning';
+      return { reasons, severity };
     }
 
-    if (referenceServer.version === server.version && referenceServer.ip !== server.ip) {
-      reasons.push(
-        `IP mismatch: Expected ${referenceServer.ip}, but got ${server.ip}.`
-      );
+    // Critical: IP mismatch
+    if (normalizeIP(referenceServer.ip) !== normalizeIP(server.ip)) {
+      reasons.push(`IP mismatch: Expected [${normalizeIP(referenceServer.ip)}], but got [${normalizeIP(server.ip)}].`);
+      severity = 'critical';
     }
 
-    if (server.isp !== 'Unknown ISP' && referenceServer.isp !== 'Unknown ISP' && referenceServer.isp !== server.isp) {
-      reasons.push(
-        `ISP mismatch: Expected ${referenceServer.isp}, but got ${server.isp}.`
-      );
+    // Warning: ISP mismatch
+    if (
+      server.isp !== 'Unknown ISP' &&
+      referenceServer.isp !== 'Unknown ISP' &&
+      referenceServer.isp !== server.isp
+    ) {
+      reasons.push(`ISP mismatch: Expected [${referenceServer.isp}], but got [${server.isp}].`);
+      severity = severity || 'warning';
     }
 
-    if (server.country !== 'Unknown' && referenceServer.country !== 'Unknown' && server.country !== referenceServer.country) {
-      reasons.push(`Mismatched Country: Expected ${referenceServer.country}, but got ${server.country}`);
+    // Warning: Country mismatch
+    if (
+      server.country !== 'Unknown' &&
+      referenceServer.country !== 'Unknown' &&
+      server.country !== referenceServer.country
+    ) {
+      reasons.push(`Mismatched Country: Expected ${referenceServer.country}, but got ${server.country}.`);
+      severity = severity || 'warning';
     }
-    if (server.city !== 'Unknown' && referenceServer.city !== 'Unknown' && server.city !== referenceServer.city) {
-      reasons.push(`Mismatched Country: Expected ${referenceServer.city}, but got ${server.city}`);
+
+    // Warning: City mismatch
+    if (
+      server.city !== 'Unknown' &&
+      referenceServer.city !== 'Unknown' &&
+      server.city !== referenceServer.city
+    ) {
+      reasons.push(`Mismatched City: Expected ${referenceServer.city}, but got ${server.city}.`);
+      severity = severity || 'warning';
     }
-    if (server.region !== 'Unknown' && referenceServer.region !== 'Unknown' && server.region !== referenceServer.region) {
-      reasons.push(`Mismatched Country: Expected ${referenceServer.region}, but got ${server.region}`);
+
+    // Warning: Region mismatch
+    if (
+      server.region !== 'Unknown' &&
+      referenceServer.region !== 'Unknown' &&
+      server.region !== referenceServer.region
+    ) {
+      reasons.push(`Mismatched Region: Expected ${referenceServer.region}, but got ${server.region}.`);
+      severity = severity || 'warning';
     }
-    return reasons;
+
+    return { reasons, severity };
   };
+
+
 
   // const hasDNSLeak = (): boolean => {
   //   return dnsServers.some((server) => getLeakReason(server) !== '');
@@ -252,12 +283,24 @@ const DNSLeakTest = () => {
         </thead>
         <tbody>
           {dnsServers.map((server, index) => {
-            const leakReason = getLeakReason(server);
-            // console.log("index", index, 'leakReason', leakReason)
+            const { reasons, severity } = getLeakReason(server);
+
+            // Determine row color based on severity
+            const rowClass = severity === 'critical'
+              ? 'bg-red-100 hover:bg-red-200'
+              : severity === 'warning'
+                ? 'bg-yellow-100 hover:bg-yellow-200'
+                : 'bg-white hover:bg-gray-100';
+            const rowClass2 = severity === 'critical'
+              ? 'bg-red-50 hover:bg-red-100 p-2 border text-red-600 text-sm '
+              : severity === 'warning'
+                ? 'bg-yellow-50 hover:bg-yellow-100 p-2 border text-yellow-600 text-sm '
+                : 'bg-white hover:bg-gray-100';
+
             return (
               <>
                 {/* Main Row */}
-                <tr key={index} className={`hover:bg-yellow-200 ${leakReason.length > 0 ? 'bg-red-100' : 'bg-white'}`}>
+                <tr key={index} className={`${rowClass}`}>
                   <td className="p-2 border">{index + 1}</td>
                   <td className="p-2 border"><CountryFlag ip={server.ip} /></td>
                   <td className="p-2 border">{server.ip}</td>
@@ -268,23 +311,20 @@ const DNSLeakTest = () => {
                 </tr>
 
                 {/* Leak Reason Row */}
-                {leakReason.length > 0 && (
-                  leakReason.map((reason, i) => {
-                    return (
-                      <tr key={i}>
-                        <td colSpan={7} className="p-2 border text-red-600 text-sm bg-red-50">
-                          {i + 1} - {reason}
-                        </td>
-                      </tr>
-                    );
-
-                  })
+                {reasons.length > 0 && (
+                  reasons.map((reason, i) => (
+                    <tr key={`reason-${index}-${i}`}>
+                      <td colSpan={7} className={rowClass2}>
+                        {i + 1} - {reason}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </>
-
             );
           })}
         </tbody>
+
       </table>
     </div>
   );
