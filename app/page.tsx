@@ -1,6 +1,7 @@
-const Overview = () => {
+
+export default function Home() {
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div className="bg-white p-6 rounded-lg shadow ">
       <h2 className="text-2xl font-semibold mb-4">Overview</h2>
       <p className="text-gray-600">
         Welcome to the Personal Security Test Suite. Use the navigation tabs above to run different security tests:
@@ -13,6 +14,4 @@ const Overview = () => {
       </ul>
     </div>
   );
-};
-
-export default Overview;
+}

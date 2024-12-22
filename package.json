@@ -2,6 +2,7 @@
   "name": "your-nextjs-security-check-app",
   "version": "0.1.0",
   "private": true,
+  "author": "Payam Shariat",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
