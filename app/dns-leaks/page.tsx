@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { FiServer, FiAlertCircle, FiGlobe, FiCheckCircle, FiPlay, FiLoader } from 'react-icons/fi';
-import Shimmer from './Shimmer';
-import { fetchDNSServers } from '../../../utils/dnsTestApi';
+import Shimmer from '../components/Shimmer';
+import { fetchDNSServers } from '../../utils/dnsTestApi';
 
 import React from 'react';
-import DNSLeakInfoBox from './DNSLeakInfoBox';
-import CountryFlag from './CountrlFlagComponent';
-import Modal from './ModalComponent';
+import DNSLeakInfoBox from './components/DNSLeakInfoBox';
+import CountryFlag from '../geo-location/components/CountrlFlagComponent';
+import Modal from './components/ModalComponent';
 
 type DNSServer = {
   ip: string;

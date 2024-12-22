@@ -1,38 +1,128 @@
-[![Deployment](https://github.com/payamss/leak-cheker/actions/workflows/deploy.yml/badge.svg)](https://github.com/payamss/leak-cheker/actions/workflows/deploy.yml)
+# Security Risk Checker
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Overview
+
+Security Risk Checker is a comprehensive web application designed to identify various security vulnerabilities and information leaks directly in your browser. Built with modern web technologies like Next.js, TypeScript, and Tailwind CSS, the application ensures a clean, responsive, and user-friendly interface.
+
+## Features
+
+- **IP Leak Testing**: Detect and display your public IPv4 and IPv6 addresses, geolocation data, and RDAP information.
+- **DNS Leak Testing**: Check for DNS leaks by comparing responses from multiple DNS servers.
+- **WebRTC Leak Testing**: Identify potential WebRTC-related privacy issues and exposed network configurations.
+- **Geolocation Testing**: Test browser geolocation API access and accuracy.
+- **Interactive UI**: Clean, responsive interface with expandable information panels.
+- **Docker Support**: Ready-to-use containerized deployment.
+
+## Demo
+
+You can try the live demo of the application at: [https://leak-check.shariat.de/](https://leak-check.shariat.de/)
+
+## Tech Stack
+
+- [Next.js 15.1](https://nextjs.org/) – React framework for server-side rendering and static site generation.
+- [TypeScript](https://www.typescriptlang.org/) – For static type checking.
+- [Tailwind CSS](https://tailwindcss.com/) – Utility-first CSS framework for styling.
+- [React Icons](https://react-icons.github.io/react-icons/) – Collection of customizable icons.
+- [Leaflet](https://leafletjs.com/) – Interactive maps for geolocation testing.
+- [Docker](https://www.docker.com/) – Simplifies containerized deployment.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Ensure the following are installed on your system:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Node.js (version 18 or later)
+- npm or yarn
+- Docker (optional, for containerized deployment)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Clone the repository:
 
-## Learn More
+   ```bash
+   git clone https://github.com/yourusername/security-risk-checker.git
+   cd security-risk-checker
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. Install dependencies:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   npm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Run the development server:
 
-## Deploy on Vercel
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Docker Deployment
+
+1. Build the Docker image:
+
+   ```bash
+   docker compose build
+   ```
+
+2. Run the container:
+
+   ```bash
+   docker compose up -d
+   ```
+
+3. Access the application at [http://localhost:3000](http://localhost:3000).
+
+## Project Structure
+
+The project follows the Next.js 13+ app directory structure:
+
+- **`app`** – Main Next.js application directory.
+- **`components`** – Reusable React components.
+- **`dns-leaks`** – Functionality for DNS leak testing.
+- **`ip-leaks`** – Functionality for IP leak testing.
+- **`webrtc-leaks`** – Functionality for WebRTC leak testing.
+- **`geo-location`** – Functionality for geolocation testing.
+- **`utils`** – Utility functions and API helpers.
+- **`public`** – Static assets like images and icons.
+
+## Contributing
+
+Contributions are welcome! To contribute:
+
+1. Fork the repository.
+2. Create a new feature branch:
+
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. Commit your changes:
+
+   ```bash
+   git commit -m "Add your feature"
+   ```
+
+4. Push to the branch:
+
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+5. Open a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+## Author
+
+Developed by Payam Shariat. [Visit my website](https://shariat.de) for more projects.
+
+## Acknowledgments
+
+- Flag icons provided by [flagcdn.com](https://flagcdn.com).
+- IP geolocation data from various public APIs.
+- DNS testing endpoints from multiple providers.

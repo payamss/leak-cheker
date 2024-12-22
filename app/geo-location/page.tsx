@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 // import CustomMap from './CustomMap';
-import LocationInfo from './LocationInfo';
+import LocationInfo from './components/LocationInfo';
 
 type LocationData = {
   latitude: number;

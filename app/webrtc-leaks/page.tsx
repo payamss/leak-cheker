@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import WebRTCLeakInfoBox from './WebRTCLeakInfoBox';
+import WebRTCLeakInfoBox from './components/WebRTCLeakInfoBox';
 import { FiServer } from 'react-icons/fi';
 
 type DeviceInfo = {
