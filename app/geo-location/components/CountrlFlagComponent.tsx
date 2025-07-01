@@ -9,7 +9,9 @@ type CountryFlagProps = {
   ip: string; // IPv4 or IPv6
 };
 
-// Main Component
+// Cache for storing flag URLs
+const flagCache = new Map<string, string>();
+
 const CountryFlag = ({ ip }: CountryFlagProps) => {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -18,16 +20,28 @@ const CountryFlag = ({ ip }: CountryFlagProps) => {
   useEffect(() => {
     const fetchCountryData = async () => {
       try {
-        // Fetch IP information (example: using ipapi.co)
         const response = await fetch(`https://ipwhois.app/json/${ip}`);
         if (!response.ok) throw new Error('Failed to fetch country data');
 
         const data = await response.json();
 
-        // Check if data has the country_code
         if (data.country_code) {
           const countryCode = data.country_code.toLowerCase();
-          setFlagUrl(`https://flagcdn.com/w80/${countryCode}.png`);
+
+          // Check if the flag is already in the cache
+          if (flagCache.has(countryCode)) {
+            setFlagUrl(flagCache.get(countryCode) || null);
+          } else {
+            const countryResponse = await fetch(`https://restcountries.com/v3.1/alpha/${countryCode}`);
+            if (!countryResponse.ok) throw new Error('Country not found');
+
+            const countryData = await countryResponse.json();
+            const flag = countryData[0]?.flags?.svg || countryData[0]?.flags?.png;
+
+            // Cache the flag URL
+            flagCache.set(countryCode, flag);
+            setFlagUrl(flag);
+          }
         } else {
           throw new Error('Country code not found');
         }
@@ -43,7 +57,7 @@ const CountryFlag = ({ ip }: CountryFlagProps) => {
   }, [ip]);
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center space-x-2 justify-center">
       {/* Loading State */}
       {loading ? (
         <FiLoader className="animate-spin text-blue-500 w-5 h-5" />
@@ -58,8 +72,8 @@ const CountryFlag = ({ ip }: CountryFlagProps) => {
           <Image
             src={flagUrl}
             alt="Country Flag"
-            width={20}
-            height={15}
+            width={30}
+            height={30}
             className="rounded"
           />
         )
