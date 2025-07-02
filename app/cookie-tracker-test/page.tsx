@@ -301,24 +301,6 @@ export default function CookieTrackerTestPage() {
                   >
                     Export JSON
                   </button>
-                  <button
-                    onClick={() => exportReport('markdown')}
-                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
-                  >
-                    Export MARKDOWN
-                  </button>
-                  <button
-                    onClick={() => exportReport('html')}
-                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
-                  >
-                    Export HTML
-                  </button>
-                  <button
-                    onClick={() => exportReport('csv')}
-                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
-                  >
-                    Export CSV
-                  </button>
                 </div>
               </div>
 
@@ -498,51 +480,204 @@ export default function CookieTrackerTestPage() {
                 <div className="space-y-6">
                   {/* Score Breakdown */}
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Privacy Score Breakdown</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left py-2">Component</th>
-                            <th className="text-right py-2">Score</th>
-                            <th className="text-right py-2">Max</th>
-                            <th className="text-left py-2">Reason</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                          <tr className="border-b">
-                            <td className="py-2">Browser</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.browser.score}</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.browser.max}</td>
-                            <td className="py-2 text-gray-600">{detailedResult.detailed.scoreBreakdown.components.browser.reason}</td>
-                          </tr>
-                          <tr className="border-b">
-                            <td className="py-2">Cookies</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.cookies.score}</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.cookies.max}</td>
-                            <td className="py-2 text-gray-600">{detailedResult.detailed.scoreBreakdown.components.cookies.reason}</td>
-                          </tr>
-                          <tr className="border-b">
-                            <td className="py-2">Fingerprinting</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.score}</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.max}</td>
-                            <td className="py-2 text-gray-600">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.reason}</td>
-                          </tr>
-                          <tr className="border-b">
-                            <td className="py-2">Hardware</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.hardware.score}</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.hardware.max}</td>
-                            <td className="py-2 text-gray-600">{detailedResult.detailed.scoreBreakdown.components.hardware.reason}</td>
-                          </tr>
-                          <tr className="border-b font-semibold">
-                            <td className="py-2">Total</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.total}</td>
-                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.maxPossible}</td>
-                            <td className="py-2">{detailedResult.detailed.scoreBreakdown.percentage}%</td>
-                          </tr>
-                        </tbody>
-                      </table>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">🎯 Privacy Score Breakdown</h3>
+                    
+                    {/* Component Cards Grid */}
+                    <div className="grid md:grid-cols-2 gap-4 mb-6">
+                      {/* Browser Score */}
+                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center">
+                            <span className="text-2xl mr-3">🌐</span>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">Browser</h4>
+                              <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.browser.score}/{detailedResult.detailed.scoreBreakdown.components.browser.max} points</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-2xl font-bold text-blue-600">
+                              {Math.round((detailedResult.detailed.scoreBreakdown.components.browser.score / detailedResult.detailed.scoreBreakdown.components.browser.max) * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.browser.score / detailedResult.detailed.scoreBreakdown.components.browser.max) * 100}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.browser.reason}</p>
+                      </div>
+
+                      {/* Cookies Score */}
+                      <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center">
+                            <span className="text-2xl mr-3">🍪</span>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">Cookies</h4>
+                              <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.cookies.score}/{detailedResult.detailed.scoreBreakdown.components.cookies.max} points</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-2xl font-bold text-green-600">
+                              {Math.round((detailedResult.detailed.scoreBreakdown.components.cookies.score / detailedResult.detailed.scoreBreakdown.components.cookies.max) * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-green-200 rounded-full h-2 mb-2">
+                          <div 
+                            className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.cookies.score / detailedResult.detailed.scoreBreakdown.components.cookies.max) * 100}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.cookies.reason}</p>
+                      </div>
+
+                      {/* Fingerprinting Score */}
+                      <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center">
+                            <span className="text-2xl mr-3">🎭</span>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">Fingerprinting</h4>
+                              <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.score}/{detailedResult.detailed.scoreBreakdown.components.fingerprinting.max} points</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-2xl font-bold text-purple-600">
+                              {Math.round((detailedResult.detailed.scoreBreakdown.components.fingerprinting.score / detailedResult.detailed.scoreBreakdown.components.fingerprinting.max) * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-purple-200 rounded-full h-2 mb-2">
+                          <div 
+                            className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.fingerprinting.score / detailedResult.detailed.scoreBreakdown.components.fingerprinting.max) * 100}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.reason}</p>
+                      </div>
+
+                      {/* Hardware Score */}
+                      <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center">
+                            <span className="text-2xl mr-3">🖥️</span>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">Hardware</h4>
+                              <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.hardware.score}/{detailedResult.detailed.scoreBreakdown.components.hardware.max} points</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-2xl font-bold text-orange-600">
+                              {Math.round((detailedResult.detailed.scoreBreakdown.components.hardware.score / detailedResult.detailed.scoreBreakdown.components.hardware.max) * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-orange-200 rounded-full h-2 mb-2">
+                          <div 
+                            className="bg-orange-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.hardware.score / detailedResult.detailed.scoreBreakdown.components.hardware.max) * 100}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.hardware.reason}</p>
+                      </div>
                     </div>
+
+                    {/* Do Not Track Bonus */}
+                    <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <span className="text-2xl mr-3">🚫</span>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">Do Not Track</h4>
+                            <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.doNotTrack.score}/{detailedResult.detailed.scoreBreakdown.components.doNotTrack.max} points</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-2xl font-bold text-indigo-600">
+                            {Math.round((detailedResult.detailed.scoreBreakdown.components.doNotTrack.score / detailedResult.detailed.scoreBreakdown.components.doNotTrack.max) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-indigo-200 rounded-full h-2 mt-3 mb-2">
+                        <div 
+                          className="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.doNotTrack.score / detailedResult.detailed.scoreBreakdown.components.doNotTrack.max) * 100}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.doNotTrack.reason}</p>
+                    </div>
+
+                    {/* Total Score Summary */}
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300 rounded-lg p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center">
+                          <span className="text-3xl mr-4">🎯</span>
+                          <div>
+                            <h4 className="text-xl font-bold text-gray-900">Total Privacy Score</h4>
+                            <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.total}/{detailedResult.detailed.scoreBreakdown.maxPossible} points</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-4xl font-bold ${getScoreColor(detailedResult.detailed.scoreBreakdown.percentage)}`}>
+                            {detailedResult.detailed.scoreBreakdown.percentage}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-4">
+                        <div 
+                          className={`h-4 rounded-full transition-all duration-500 ${
+                            detailedResult.detailed.scoreBreakdown.percentage >= 80 ? 'bg-green-500' :
+                            detailedResult.detailed.scoreBreakdown.percentage >= 60 ? 'bg-yellow-500' :
+                            detailedResult.detailed.scoreBreakdown.percentage >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${detailedResult.detailed.scoreBreakdown.percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Penalties and Bonuses */}
+                    {(detailedResult.detailed.scoreBreakdown.penalties.length > 0 || detailedResult.detailed.scoreBreakdown.bonuses.length > 0) && (
+                      <div className="grid md:grid-cols-2 gap-4 mt-6">
+                        {/* Penalties */}
+                        {detailedResult.detailed.scoreBreakdown.penalties.length > 0 && (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <h5 className="font-semibold text-red-800 mb-3 flex items-center">
+                              <span className="mr-2">⚠️</span>
+                              Privacy Penalties
+                            </h5>
+                            <ul className="space-y-2">
+                              {detailedResult.detailed.scoreBreakdown.penalties.map((penalty, index) => (
+                                <li key={index} className="flex justify-between text-sm">
+                                  <span className="text-red-700">{penalty.reason}</span>
+                                  <span className="font-medium text-red-800">{penalty.points}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Bonuses */}
+                        {detailedResult.detailed.scoreBreakdown.bonuses.length > 0 && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <h5 className="font-semibold text-green-800 mb-3 flex items-center">
+                              <span className="mr-2">✅</span>
+                              Privacy Bonuses
+                            </h5>
+                            <ul className="space-y-2">
+                              {detailedResult.detailed.scoreBreakdown.bonuses.map((bonus, index) => (
+                                <li key={index} className="flex justify-between text-sm">
+                                  <span className="text-green-700">{bonus.reason}</span>
+                                  <span className="font-medium text-green-800">+{bonus.points}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Advanced Fingerprinting Data */}
@@ -632,80 +767,86 @@ export default function CookieTrackerTestPage() {
               {activeTab === 'recommendations' && detailedResult && (
                 <div className="space-y-6">
                   {/* Recommendations by Priority */}
-                  {(userFriendlyReport?.visualElements.recommendations?.length ? userFriendlyReport.visualElements.recommendations : [
-                    { category: 'High Priority', priority: 'high' as 'high', items: detailedResult.detailed.technicalRecommendations.filter(r => r.category === 'critical').map(r => r.title) },
-                    { category: 'Medium Priority', priority: 'medium' as 'medium', items: detailedResult.detailed.technicalRecommendations.filter(r => r.category === 'important').map(r => r.title) },
-                    { category: 'Low Priority', priority: 'low' as 'low', items: detailedResult.detailed.technicalRecommendations.filter(r => r.category === 'suggested' || r.category === 'informational').map(r => r.title) }
-                  ]).map((category, index) => (
-                    <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">{category.category}</h3>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(category.priority)}`}>
-                          {category.priority.toUpperCase()} PRIORITY
-                        </span>
-                      </div>
-                      <div className="space-y-4">
-                        {detailedResult.detailed.technicalRecommendations
-                          .filter(rec => {
-                            if (category.priority === 'high') return rec.category === 'critical';
-                            if (category.priority === 'medium') return rec.category === 'important';
-                            return rec.category === 'suggested' || rec.category === 'informational';
-                          })
-                          .map((rec, recIndex) => (
-                            <div key={recIndex} className="border border-gray-200 rounded-lg p-4">
-                              <div className="flex justify-between items-start mb-3">
-                                <h4 className="font-semibold text-gray-900">{rec.title}</h4>
-                                <span className="text-sm text-green-600 font-medium">+{rec.impact.privacyGain}% privacy</span>
-                              </div>
-                              <p className="text-gray-700 mb-3">{rec.description}</p>
-                              <div className="text-sm text-gray-600 mb-3">
-                                <strong>Technical Details:</strong> {rec.technicalDetails}
-                              </div>
-                              {/* Implementation Steps */}
-                              {rec.implementation.browserSettings && (
-                                <div className="mb-3">
-                                  <strong className="text-sm text-gray-900">Browser Settings:</strong>
-                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
-                                    {rec.implementation.browserSettings.map((setting, settingIndex) => (
-                                      <li key={settingIndex}>{setting}</li>
-                                    ))}
-                                  </ul>
+                  {(() => {
+                    const recs = detailedResult.detailed.technicalRecommendations;
+                    if (!recs || recs.length === 0) {
+                      return <div className="text-gray-600">No recommendations available. Your privacy settings are strong!</div>;
+                    }
+                    const priorities = [
+                      { label: 'High Priority', key: 'critical', color: 'high' as 'high' },
+                      { label: 'Medium Priority', key: 'important', color: 'medium' as 'medium' },
+                      { label: 'Low Priority', key: 'suggested', color: 'low' as 'low' },
+                      { label: 'Informational', key: 'informational', color: 'low' as 'low' }
+                    ];
+                    return priorities.map(priority => {
+                      const group = recs.filter(r => r.category === priority.key);
+                      if (group.length === 0) return null;
+                      return (
+                        <div key={priority.key} className="bg-white border border-gray-200 rounded-lg p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900">{priority.label}</h3>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(priority.color)}`}>
+                              {priority.label.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="space-y-4">
+                            {group.map((rec, recIndex) => (
+                              <div key={recIndex} className="border border-gray-200 rounded-lg p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="font-semibold text-gray-900">{rec.title}</h4>
+                                  <span className="text-sm text-green-600 font-medium">+{rec.impact.privacyGain}% privacy</span>
                                 </div>
-                              )}
-                              {rec.implementation.extensions && (
-                                <div className="mb-3">
-                                  <strong className="text-sm text-gray-900">Recommended Extensions:</strong>
-                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
-                                    {rec.implementation.extensions.map((ext, extIndex) => (
-                                      <li key={extIndex}>{ext}</li>
-                                    ))}
-                                  </ul>
+                                <p className="text-gray-700 mb-3">{rec.description}</p>
+                                <div className="text-sm text-gray-600 mb-3">
+                                  <strong>Technical Details:</strong> {rec.technicalDetails}
                                 </div>
-                              )}
-                              {rec.implementation.advanced && (
-                                <div className="mb-3">
-                                  <strong className="text-sm text-gray-900">Advanced Configuration:</strong>
-                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
-                                    {rec.implementation.advanced.map((adv, advIndex) => (
-                                      <li key={advIndex}>{adv}</li>
-                                    ))}
-                                  </ul>
+                                {/* Implementation Steps */}
+                                {rec.implementation.browserSettings && (
+                                  <div className="mb-3">
+                                    <strong className="text-sm text-gray-900">Browser Settings:</strong>
+                                    <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                      {rec.implementation.browserSettings.map((setting, settingIndex) => (
+                                        <li key={settingIndex}>{setting}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {rec.implementation.extensions && (
+                                  <div className="mb-3">
+                                    <strong className="text-sm text-gray-900">Recommended Extensions:</strong>
+                                    <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                      {rec.implementation.extensions.map((ext, extIndex) => (
+                                        <li key={extIndex}>{ext}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {rec.implementation.advanced && (
+                                  <div className="mb-3">
+                                    <strong className="text-sm text-gray-900">Advanced Configuration:</strong>
+                                    <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                      {rec.implementation.advanced.map((adv, advIndex) => (
+                                        <li key={advIndex}>{adv}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {/* Impact Analysis */}
+                                <div className="flex space-x-4 text-xs">
+                                  <span className="bg-gray-100 px-2 py-1 rounded">
+                                    Usability Impact: {rec.impact.usabilityImpact}
+                                  </span>
+                                  <span className="bg-gray-100 px-2 py-1 rounded">
+                                    Breakage Risk: {rec.impact.breakageRisk}
+                                  </span>
                                 </div>
-                              )}
-                              {/* Impact Analysis */}
-                              <div className="flex space-x-4 text-xs">
-                                <span className="bg-gray-100 px-2 py-1 rounded">
-                                  Usability Impact: {rec.impact.usabilityImpact}
-                                </span>
-                                <span className="bg-gray-100 px-2 py-1 rounded">
-                                  Breakage Risk: {rec.impact.breakageRisk}
-                                </span>
                               </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               )}
             </div>

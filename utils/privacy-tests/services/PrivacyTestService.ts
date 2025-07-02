@@ -67,7 +67,7 @@ export class PrivacyTestService {
       );
 
       // Calculate privacy score with detailed breakdown
-      const score = this.privacyScorer.calculateScore({
+      const scoreBreakdown = this.privacyScorer.calculateDetailedScore({
         browser: browserInfo,
         cookies: cookieResult,
         fingerprinting: fingerprintingResult,
@@ -75,20 +75,6 @@ export class PrivacyTestService {
         privacyScore: 0,
         recommendations: []
       });
-      const scoreBreakdown: ScoreBreakdown = {
-        total: score,
-        maxPossible: 100,
-        percentage: score,
-        components: {
-          browser: { score: 0, max: 20, reason: '' },
-          cookies: { score: 0, max: 30, reason: '' },
-          fingerprinting: { score: 0, max: 40, reason: '' },
-          hardware: { score: 0, max: 15, reason: '' },
-          doNotTrack: { score: 0, max: 10, reason: '' }
-        },
-        penalties: [],
-        bonuses: []
-      };
 
       // Build basic user-friendly result
       const userFriendly: PrivacyTestResult = {
