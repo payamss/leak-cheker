@@ -16,7 +16,8 @@ import {
   FiX, 
   FiFileText,
   FiChevronLeft,
-  FiChevronRight
+  FiChevronRight,
+  FiZap
 } from 'react-icons/fi';
 
 type NavItem = {
@@ -76,6 +77,13 @@ const navItems: NavItem[] = [
     href: '/cookie-tracker-test',
     icon: FiDatabase,
     description: 'Privacy & tracking analysis'
+  },
+  {
+    id: 'internet-speed-test',
+    label: 'Speed Test',
+    href: '/internet-speed-test',
+    icon: FiZap,
+    description: 'Internet speed testing'
   },
   {
     id: 'privacy-policy',
@@ -216,7 +224,7 @@ export default function Sidebar() {
           {!isCollapsed ? (
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-1">Security Test Suite</p>
-              <p className="text-xs text-gray-500">v1.1.0</p>
+                              <p className="text-xs text-gray-500">v1.2.0</p>
             </div>
           ) : (
             <div className="flex justify-center">

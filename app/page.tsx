@@ -7,7 +7,7 @@ export default function Home() {
         Welcome to the comprehensive Security Risk Checker suite. Use the sidebar navigation to access different security tests and protect your digital privacy.
       </p>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h3 className="font-semibold text-blue-800 mb-2">Network Security</h3>
           <ul className="text-sm text-gray-700 space-y-1">
@@ -22,6 +22,14 @@ export default function Home() {
             <li>• Geolocation Privacy</li>
             <li>• Cookie & Tracker Test</li>
             <li>• Browser Fingerprinting</li>
+          </ul>
+        </div>
+        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+          <h3 className="font-semibold text-purple-800 mb-2">Performance Testing</h3>
+          <ul className="text-sm text-gray-700 space-y-1">
+            <li>• Internet Speed Test</li>
+            <li>• Connection Quality</li>
+            <li>• VPN Performance</li>
           </ul>
         </div>
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
