@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FiWifi, FiDownload, FiUpload, FiClock, FiPlay, FiRefreshCw, FiTrendingUp, FiCheckCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import { FiWifi, FiDownload, FiUpload, FiClock, FiPlay, FiRefreshCw, FiTrendingUp, FiInfo } from 'react-icons/fi';
 import SpeedTestInfoBox from './components/SpeedTestInfoBox';
 
 type TestStatus = 'idle' | 'testing' | 'completed' | 'error';
@@ -56,7 +56,8 @@ const InternetSpeedTest = () => {
     setIsClient(true);
   }, []);
 
-  // Server Discovery - Find fastest servers first
+  // Server Discovery - Find fastest servers first (unused in hybrid mode, kept for reference)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const discoverOptimalServers = async (useCache: boolean = false): Promise<string[]> => {
     // Return cached results if available and requested
     if (useCache && optimalServersCache.length > 0) {
@@ -156,7 +157,7 @@ const InternetSpeedTest = () => {
                 reader.releaseLock();
               }
             }
-          } catch (e) {
+          } catch {
             // Download test failed, but we still have latency
           }
           
@@ -174,8 +175,8 @@ const InternetSpeedTest = () => {
         
         console.log(`${server.name}: ${Math.round(latency)}ms latency, ${downloadSpeed.toFixed(2)} Mbps`);
         
-      } catch (e) {
-        console.warn(`Server ${server.name} failed:`, e);
+      } catch (err) {
+        console.warn(`Server ${server.name} failed:`, err);
         // Don't add failed servers to results
       }
     }
@@ -231,7 +232,7 @@ const InternetSpeedTest = () => {
         const endpoint = pingEndpoints[i % pingEndpoints.length];
         const startTime = performance.now();
         
-        const response = await fetch(`${endpoint}?t=${Date.now()}`, { 
+        await fetch(`${endpoint}?t=${Date.now()}`, { 
           method: 'HEAD',
           cache: 'no-cache',
           mode: 'no-cors'
@@ -245,8 +246,8 @@ const InternetSpeedTest = () => {
         
         // Small delay between pings
         await new Promise(resolve => setTimeout(resolve, 200));
-      } catch (e) {
-        console.warn('Ping test failed:', e);
+      } catch (err) {
+        console.warn('Ping test failed:', err);
         // Add a fallback ping time if request fails
         pings.push(100); // 100ms fallback
       }
@@ -260,35 +261,43 @@ const InternetSpeedTest = () => {
     return { ping: Math.round(avgPing), jitter: Math.round(jitter * 10) / 10 };
   };
 
-  // Professional Download Speed Test - Hybrid Multi-Endpoint Approach
+  // Professional Download Speed Test - Self-Hosted + External Hybrid Approach
   const testDownloadSpeed = async (): Promise<number> => {
-    console.log('Starting professional hybrid download test...');
+    console.log('Starting hybrid self-hosted + external download test...');
     
     const startTime = performance.now();
     let totalBytesDownloaded = 0;
     let testRunning = true;
-    let connections = 2; // Start with 2 connections for better initial throughput
-    let measurements: Array<{ time: number; bytes: number; speed: number }> = [];
+    let connections = 2;
+    const measurements: Array<{ time: number; bytes: number; speed: number }> = [];
     
     setRealTimeSpeed(prev => ({ ...prev, downloadSpeed: 0, showSpeed: true }));
     
-    // Multi-endpoint hybrid approach - use multiple reliable sources
+    // Hybrid approach: Self-hosted endpoints + External endpoints
     const testEndpoints = [
-      // Small to medium files from reliable services
+      // Self-hosted endpoints (no CORS issues, larger files possible)
+      '/api/speedtest/download?size=1MB',    // 1MB from your server
+      '/api/speedtest/download?size=2MB',    // 2MB from your server  
+      '/api/speedtest/download?size=5MB',    // 5MB from your server
+      '/api/speedtest/download?size=10MB',   // 10MB from your server
+      '/api/speedtest/download?size=25MB',   // 25MB from your server
+      '/api/speedtest/download?size=50MB',   // 50MB from your server
+      '/api/speedtest/download?size=100MB',  // 100MB from your server - for gigabit testing!
+      
+      // External endpoints for geographic diversity
       'https://httpbin.org/bytes/1048576',    // 1MB
       'https://httpbin.org/bytes/2097152',    // 2MB
       'https://httpbin.org/bytes/3145728',    // 3MB
       'https://httpbingo.org/bytes/1048576',  // 1MB alternative
       'https://httpbingo.org/bytes/2097152',  // 2MB alternative
-      'https://httpbingo.org/bytes/3145728',  // 3MB alternative
-      // Additional reliable endpoints
+      
+      // Fast JSON endpoints for latency baseline
       'https://jsonplaceholder.typicode.com/photos',  // ~500KB JSON
       'https://jsonplaceholder.typicode.com/users',   // ~20KB JSON
-      'https://jsonplaceholder.typicode.com/posts',   // ~50KB JSON
-      'https://jsonplaceholder.typicode.com/comments' // ~150KB JSON
+      '/api/speedtest/download?size=500KB&format=json' // 500KB JSON from your server
     ];
     
-    console.log(`Testing with ${testEndpoints.length} endpoints using hybrid approach`);
+    console.log(`Testing with ${testEndpoints.length} hybrid endpoints (self-hosted + external)`);
     
     // Measurement tracking
     let lastMeasureTime = startTime;
@@ -316,7 +325,7 @@ const InternetSpeedTest = () => {
           measurements.push({ time: elapsed, bytes: totalBytesDownloaded, speed: speedMbps });
           
           // Check for stability
-          if (Math.abs(speedMbps - lastSpeed) < lastSpeed * 0.15) { // Allow 15% variance
+          if (Math.abs(speedMbps - lastSpeed) < lastSpeed * 0.15) {
             stableSpeedCount++;
           } else {
             stableSpeedCount = 0;
@@ -335,44 +344,55 @@ const InternetSpeedTest = () => {
       }
     };
     
-    // Aggressive connection scaling for high-throughput testing
+    // Aggressive scaling for self-hosted + external hybrid
     const scaleConnections = () => {
       const currentSpeedMbps = measurements.length > 0 ? 
         measurements[measurements.length - 1].speed : 0;
       
-      // More aggressive scaling to saturate gigabit connections
-      if (currentSpeedMbps > 0.5 && connections < 3) {
-        connections = 3;
-      } else if (currentSpeedMbps > 2 && connections < 4) {
+      // More aggressive scaling since we have self-hosted endpoints
+      if (currentSpeedMbps > 1 && connections < 4) {
         connections = 4;
       } else if (currentSpeedMbps > 5 && connections < 6) {
         connections = 6;
-      } else if (currentSpeedMbps > 10 && connections < 8) {
+      } else if (currentSpeedMbps > 15 && connections < 8) {
         connections = 8;
-      } else if (currentSpeedMbps > 20 && connections < 10) {
-        connections = 10; // More connections for higher speeds
+      } else if (currentSpeedMbps > 30 && connections < 12) {
+        connections = 12; // More connections for self-hosted performance
+      } else if (currentSpeedMbps > 50 && connections < 16) {
+        connections = 16; // Maximum for gigabit testing
       }
     };
     
-    // High-performance download worker with rapid cycling
+    // High-performance download worker with self-hosted priority
     const downloadWorker = async (workerId: number): Promise<number> => {
       let workerBytes = 0;
       let requestCount = 0;
       let consecutiveErrors = 0;
       
-      while (testRunning && consecutiveErrors < 2) {
+      while (testRunning && consecutiveErrors < 3) {
         try {
-          // Rapid endpoint cycling for maximum throughput
-          const endpointIndex = (workerId * 7 + requestCount) % testEndpoints.length;
-          const endpoint = testEndpoints[endpointIndex];
+          // Prioritize self-hosted endpoints for higher speeds
+          const selfHostedEndpoints = testEndpoints.filter(url => url.startsWith('/api/'));
+          const externalEndpoints = testEndpoints.filter(url => !url.startsWith('/api/'));
           
-          // Cache busting with worker and request identifiers
-          const testUrl = `${endpoint}${endpoint.includes('?') ? '&' : '?'}t=${Date.now()}&w=${workerId}&r=${requestCount}&rand=${Math.random()}`;
+          let endpoint: string;
+          if (requestCount % 3 === 0 && selfHostedEndpoints.length > 0) {
+            // Use self-hosted endpoints 2/3 of the time
+            const index = (workerId + requestCount) % selfHostedEndpoints.length;
+            endpoint = selfHostedEndpoints[index];
+          } else {
+            // Use external endpoints 1/3 of the time for diversity
+            const index = (workerId + requestCount) % externalEndpoints.length;
+            endpoint = externalEndpoints[index];
+          }
+          
+          // Cache busting
+          const separator = endpoint.includes('?') ? '&' : '?';
+          const testUrl = `${endpoint}${separator}t=${Date.now()}&w=${workerId}&r=${requestCount}&rand=${Math.random()}`;
           
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 6000); // 6 second timeout
+          const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout for large files
           
-          const fetchStart = performance.now();
           const response = await fetch(testUrl, {
             signal: controller.signal,
             cache: 'no-store',
@@ -436,9 +456,10 @@ const InternetSpeedTest = () => {
           // Scale connections based on performance
           scaleConnections();
           
-          // Minimal delay between requests for maximum throughput
+          // Minimal delay for self-hosted, slightly longer for external
+          const delay = endpoint.startsWith('/api/') ? 25 : 50;
           if (testRunning) {
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
           
         } catch (e) {
@@ -447,7 +468,7 @@ const InternetSpeedTest = () => {
           requestCount++;
           
           // Quick retry on errors
-          if (consecutiveErrors < 2) {
+          if (consecutiveErrors < 3) {
             await new Promise(resolve => setTimeout(resolve, 200));
           }
         }
@@ -459,16 +480,17 @@ const InternetSpeedTest = () => {
     // Start with multiple workers for immediate parallelization
     const workers = [
       downloadWorker(0),
-      downloadWorker(1)
+      downloadWorker(1),
+      downloadWorker(2)
     ];
     
     // Rapid connection scaling
     const connectionScaler = setInterval(() => {
       if (workers.length < connections && testRunning) {
         workers.push(downloadWorker(workers.length));
-        console.log(`Scaled to ${workers.length + 1} connections (${connections} target)`);
+        console.log(`Scaled to ${workers.length + 1} connections (${connections} target) - Hybrid mode`);
       }
-    }, 800); // Very fast scaling
+    }, 600); // Fast scaling for hybrid approach
     
     // Test completion handler
     setTimeout(() => {
@@ -476,7 +498,7 @@ const InternetSpeedTest = () => {
       clearInterval(connectionScaler);
     }, testConfig.maxTestDuration * 1000);
     
-    // Additional early completion check
+    // Early completion check
     const stabilityChecker = setInterval(() => {
       const elapsed = (performance.now() - startTime) / 1000;
       if (elapsed > testConfig.minTestDuration && 
@@ -503,33 +525,34 @@ const InternetSpeedTest = () => {
       return 0;
     }
     
-    // Use 75th percentile instead of median for better high-speed representation
+    // Use 80th percentile for better high-speed representation with self-hosted endpoints
     const speeds = stableMeasurements.map(m => m.speed).sort((a, b) => a - b);
-    const percentile75Index = Math.floor(speeds.length * 0.75);
-    const finalSpeed = speeds[percentile75Index] || speeds[speeds.length - 1];
+    const percentile80Index = Math.floor(speeds.length * 0.8);
+    const finalSpeed = speeds[percentile80Index] || speeds[speeds.length - 1];
     
-    console.log(`Download test complete: ${finalSpeed} Mbps from ${stableMeasurements.length} measurements using ${workers.length} connections`);
+    console.log(`Hybrid download test complete: ${finalSpeed} Mbps from ${stableMeasurements.length} measurements using ${workers.length} connections`);
     console.log(`Speed range: ${speeds[0]?.toFixed(2)} - ${speeds[speeds.length - 1]?.toFixed(2)} Mbps`);
     
     return Math.round(finalSpeed * 100) / 100;
   };
 
-  // Professional Upload Speed Test - Optimized for CORS-friendly endpoints
+  // Professional Upload Speed Test - Self-Hosted + External Hybrid
   const testUploadSpeed = async (): Promise<number> => {
-    console.log('Starting professional upload test...');
+    console.log('Starting hybrid self-hosted + external upload test...');
     
     const startTime = performance.now();
     let totalBytesUploaded = 0;
     let testRunning = true;
-    let connections = 1; // Start with 1 connection
-    let measurements: Array<{ time: number; bytes: number; speed: number }> = [];
+    let connections = 1;
+    const measurements: Array<{ time: number; bytes: number; speed: number }> = [];
     
     setRealTimeSpeed(prev => ({ ...prev, uploadSpeed: 0, showSpeed: true }));
     
-    // CORS-friendly upload endpoints - use only the most reliable ones
+    // Hybrid upload endpoints - prioritize self-hosted
     const uploadEndpoints = [
-      'https://httpbin.org/post',
-      'https://httpbingo.org/post'
+      '/api/speedtest/upload',           // Your server - no CORS issues!
+      'https://httpbin.org/post',        // External alternative
+      'https://httpbingo.org/post'       // External alternative
     ];
     
     // Measurement tracking
@@ -577,24 +600,28 @@ const InternetSpeedTest = () => {
       }
     };
     
-    // Conservative connection scaling for uploads
+    // Enhanced connection scaling for self-hosted uploads
     const scaleConnections = () => {
       const currentSpeedMbps = measurements.length > 0 ? 
         measurements[measurements.length - 1].speed : 0;
       
-      if (currentSpeedMbps > 3 && connections < 2) {
+      if (currentSpeedMbps > 2 && connections < 2) {
         connections = 2;
-      } else if (currentSpeedMbps > 10 && connections < 3) {
+      } else if (currentSpeedMbps > 5 && connections < 3) {
         connections = 3;
+      } else if (currentSpeedMbps > 10 && connections < 4) {
+        connections = 4;
+      } else if (currentSpeedMbps > 20 && connections < 6) {
+        connections = 6; // More aggressive for self-hosted
       }
     };
     
-    // Generate upload data - smaller chunks for CORS endpoints
+    // Generate upload data with varying sizes
     const generateUploadData = (sizeKB: number): Uint8Array => {
       const bytes = sizeKB * 1024;
       const data = new Uint8Array(bytes);
       
-      // Fill with pattern for compression resistance
+      // Fill with pseudo-random data to prevent compression
       for (let i = 0; i < bytes; i++) {
         data[i] = Math.floor(Math.random() * 256);
       }
@@ -602,23 +629,27 @@ const InternetSpeedTest = () => {
       return data;
     };
     
-    // Upload worker function
+    // Enhanced upload worker with self-hosted priority
     const uploadWorker = async (workerId: number): Promise<number> => {
       let workerBytes = 0;
       let requestCount = 0;
       
-      while (testRunning && requestCount < 10) { // Limit requests per worker
+      while (testRunning && requestCount < 15) { // More requests for better measurement
         try {
-          const endpointIndex = (workerId + requestCount) % uploadEndpoints.length;
-          const endpoint = uploadEndpoints[endpointIndex];
+          // Prioritize self-hosted endpoint (80% of the time)
+          const endpoint = (requestCount % 5 === 0 && uploadEndpoints.length > 1) 
+            ? uploadEndpoints[1 + (requestCount % 2)] // External endpoints occasionally
+            : uploadEndpoints[0]; // Self-hosted endpoint most of the time
           
-          // Generate upload data - start small, increase based on performance
-          const chunkSizeKB = Math.min(512, 64 * (requestCount + 1)); // 64KB to 512KB
+          // Dynamic chunk sizing - larger for self-hosted
+          const baseSizeKB = endpoint.startsWith('/api/') ? 1024 : 512; // 1MB vs 512KB
+          const chunkSizeKB = Math.min(baseSizeKB * 2, baseSizeKB + (requestCount * 256));
           const uploadData = generateUploadData(chunkSizeKB);
           
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+          const timeout = setTimeout(() => controller.abort(), 8000);
           
+          const uploadStart = performance.now();
           const response = await fetch(endpoint, {
             method: 'POST',
             signal: controller.signal,
@@ -635,11 +666,23 @@ const InternetSpeedTest = () => {
             throw new Error(`Upload failed: ${response.status}`);
           }
           
-          workerBytes += uploadData.length;
-          totalBytesUploaded += uploadData.length;
+          // For self-hosted endpoint, we get detailed response
+          if (endpoint.startsWith('/api/')) {
+            const result = await response.json();
+            console.log(`Self-hosted upload result:`, result);
+          } else {
+            await response.text(); // Consume external response
+          }
           
-          measureSpeed();
-          updateProgress();
+          const uploadDuration = (performance.now() - uploadStart) / 1000;
+          
+          if (uploadDuration > 0.1) { // Valid timing
+            workerBytes += uploadData.length;
+            totalBytesUploaded += uploadData.length;
+            
+            measureSpeed();
+            updateProgress();
+          }
           
           requestCount++;
           
@@ -660,14 +703,15 @@ const InternetSpeedTest = () => {
           // Scale connections based on performance
           scaleConnections();
           
-          // Small delay between uploads
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Minimal delay for self-hosted, longer for external
+          const delay = endpoint.startsWith('/api/') ? 50 : 150;
+          await new Promise(resolve => setTimeout(resolve, delay));
           
         } catch (e) {
           console.warn(`Upload worker ${workerId} error:`, e);
           requestCount++;
           
-          if (requestCount > 3) break;
+          if (requestCount > 5) break;
           
           await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -676,18 +720,18 @@ const InternetSpeedTest = () => {
       return workerBytes;
     };
     
-    // Start initial worker
+    // Start with initial worker
     const workers = [uploadWorker(0)];
     
-    // Add more workers conservatively
+    // Add more workers based on performance
     const connectionScaler = setInterval(() => {
       if (workers.length < connections && testRunning) {
         workers.push(uploadWorker(workers.length));
-        console.log(`Upload scaled to ${workers.length + 1} connections`);
+        console.log(`Upload scaled to ${workers.length + 1} connections - Hybrid mode`);
       }
-    }, 3000); // Even slower scaling for uploads
+    }, 2500); // Conservative scaling for uploads
     
-    // Run test
+    // Test completion handler
     setTimeout(() => {
       testRunning = false;
       clearInterval(connectionScaler);
@@ -708,11 +752,11 @@ const InternetSpeedTest = () => {
       return 0;
     }
     
-    // Use median of stable measurements
+    // Use median for upload (more conservative than download)
     const speeds = stableMeasurements.map(m => m.speed).sort((a, b) => a - b);
     const medianSpeed = speeds[Math.floor(speeds.length / 2)];
     
-    console.log(`Upload test complete: ${medianSpeed} Mbps from ${stableMeasurements.length} measurements`);
+    console.log(`Hybrid upload test complete: ${medianSpeed} Mbps from ${stableMeasurements.length} measurements`);
     return Math.round(medianSpeed * 100) / 100;
   };
 
