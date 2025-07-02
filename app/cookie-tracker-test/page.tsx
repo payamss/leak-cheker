@@ -11,6 +11,8 @@ export default function CookieTrackerTestPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'technical' | 'recommendations'>('overview');
   const [showRawData, setShowRawData] = useState(false);
+  const [showRawJson, setShowRawJson] = useState(false);
+  const [jsonCopySuccess, setJsonCopySuccess] = useState(false);
 
   const runTest = async () => {
     setIsLoading(true);
@@ -58,6 +60,17 @@ export default function CookieTrackerTestPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export failed:', err);
+    }
+  };
+
+  const handleCopyJson = async () => {
+    if (!detailedResult) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(detailedResult, null, 2));
+      setJsonCopySuccess(true);
+      setTimeout(() => setJsonCopySuccess(false), 1500);
+    } catch {
+      setJsonCopySuccess(false);
     }
   };
 
@@ -262,16 +275,50 @@ export default function CookieTrackerTestPage() {
               {/* Export Options */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="font-semibold text-gray-900 mb-3">📥 Export Report</h3>
-                <div className="flex flex-wrap gap-2">
-                  {['json', 'markdown', 'html', 'csv'].map((format) => (
-                    <button
-                      key={format}
-                      onClick={() => exportReport(format as any)}
-                      className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
-                    >
-                      Export {format.toUpperCase()}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <button
+                    onClick={() => setShowRawJson(!showRawJson)}
+                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                  >
+                    {showRawJson ? 'Hide JSON' : 'Copy JSON'}
+                  </button>
+                  {showRawJson && (
+                    <>
+                      <button
+                        onClick={handleCopyJson}
+                        className="bg-blue-100 border border-blue-300 hover:bg-blue-200 px-3 py-1 rounded text-sm font-medium ml-2"
+                      >
+                        {jsonCopySuccess ? 'Copied!' : 'Copy to Clipboard'}
+                      </button>
+                      <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto mt-2 max-h-96">
+                        {JSON.stringify(detailedResult, null, 2)}
+                      </pre>
+                    </>
+                  )}
+                  <button
+                    onClick={() => exportReport('json')}
+                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                  >
+                    Export JSON
+                  </button>
+                  <button
+                    onClick={() => exportReport('markdown')}
+                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                  >
+                    Export MARKDOWN
+                  </button>
+                  <button
+                    onClick={() => exportReport('html')}
+                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                  >
+                    Export HTML
+                  </button>
+                  <button
+                    onClick={() => exportReport('csv')}
+                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                  >
+                    Export CSV
+                  </button>
                 </div>
               </div>
 
@@ -585,7 +632,11 @@ export default function CookieTrackerTestPage() {
               {activeTab === 'recommendations' && detailedResult && (
                 <div className="space-y-6">
                   {/* Recommendations by Priority */}
-                  {userFriendlyReport?.visualElements.recommendations.map((category, index) => (
+                  {(userFriendlyReport?.visualElements.recommendations?.length ? userFriendlyReport.visualElements.recommendations : [
+                    { category: 'High Priority', priority: 'high' as 'high', items: detailedResult.detailed.technicalRecommendations.filter(r => r.category === 'critical').map(r => r.title) },
+                    { category: 'Medium Priority', priority: 'medium' as 'medium', items: detailedResult.detailed.technicalRecommendations.filter(r => r.category === 'important').map(r => r.title) },
+                    { category: 'Low Priority', priority: 'low' as 'low', items: detailedResult.detailed.technicalRecommendations.filter(r => r.category === 'suggested' || r.category === 'informational').map(r => r.title) }
+                  ]).map((category, index) => (
                     <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-900">{category.category}</h3>
@@ -593,7 +644,6 @@ export default function CookieTrackerTestPage() {
                           {category.priority.toUpperCase()} PRIORITY
                         </span>
                       </div>
-                      
                       <div className="space-y-4">
                         {detailedResult.detailed.technicalRecommendations
                           .filter(rec => {
@@ -607,13 +657,10 @@ export default function CookieTrackerTestPage() {
                                 <h4 className="font-semibold text-gray-900">{rec.title}</h4>
                                 <span className="text-sm text-green-600 font-medium">+{rec.impact.privacyGain}% privacy</span>
                               </div>
-                              
                               <p className="text-gray-700 mb-3">{rec.description}</p>
-                              
                               <div className="text-sm text-gray-600 mb-3">
                                 <strong>Technical Details:</strong> {rec.technicalDetails}
                               </div>
-                              
                               {/* Implementation Steps */}
                               {rec.implementation.browserSettings && (
                                 <div className="mb-3">
@@ -625,7 +672,6 @@ export default function CookieTrackerTestPage() {
                                   </ul>
                                 </div>
                               )}
-                              
                               {rec.implementation.extensions && (
                                 <div className="mb-3">
                                   <strong className="text-sm text-gray-900">Recommended Extensions:</strong>
@@ -636,7 +682,6 @@ export default function CookieTrackerTestPage() {
                                   </ul>
                                 </div>
                               )}
-                              
                               {rec.implementation.advanced && (
                                 <div className="mb-3">
                                   <strong className="text-sm text-gray-900">Advanced Configuration:</strong>
@@ -647,7 +692,6 @@ export default function CookieTrackerTestPage() {
                                   </ul>
                                 </div>
                               )}
-                              
                               {/* Impact Analysis */}
                               <div className="flex space-x-4 text-xs">
                                 <span className="bg-gray-100 px-2 py-1 rounded">

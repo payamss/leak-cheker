@@ -12,7 +12,7 @@ export class CookieTester {
 
   public async test(): Promise<CookieTestResult> {
     return {
-      thirdPartyCookiesBlocked: await this.testThirdPartyCookies(),
+      thirdPartyCookiesBlocked: await this.testThirdPartyCookiesCrossOrigin(),
       sameSiteNoneBlocked: !this.testSameSiteCookie('None'),
       sameSiteLaxBlocked: !this.testSameSiteCookie('Lax'),
       sameSiteStrictBlocked: !this.testSameSiteCookie('Strict'),
@@ -21,24 +21,45 @@ export class CookieTester {
     };
   }
 
-  private async testThirdPartyCookies(): Promise<boolean> {
-    try {
-      // Test if third-party cookies are blocked
-      const testCookie = 'privacy_test_3p=1; SameSite=None; Secure';
-      document.cookie = testCookie;
+  /**
+   * Real third-party cookie test using a cross-origin iframe (e.g., shariat.de/cookie-checker.html)
+   * Returns true if third-party cookies are blocked, false otherwise.
+   */
+  private async testThirdPartyCookiesCrossOrigin(): Promise<boolean> {
+    // Only run in browser
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return true;
+    }
 
-      // Check if cookie was set
-      const wasSet = document.cookie.includes('privacy_test_3p=1');
+    return new Promise<boolean>((resolve) => {
+      const thirdPartyOrigin = 'https://shariat.de';
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = `${thirdPartyOrigin}/cookie-checker.html`;
 
-      // Clean up
-      if (wasSet) {
-        document.cookie = 'privacy_test_3p=; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure';
+      // Timeout fallback (assume blocked if no response in 2s)
+      const timeout = setTimeout(() => {
+        cleanup();
+        resolve(true);
+      }, 2000);
+
+      function cleanup() {
+        window.removeEventListener('message', onMessage);
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        clearTimeout(timeout);
       }
 
-      return !wasSet;
-    } catch {
-      return true; // If error, assume blocked
-    }
+      function onMessage(event: MessageEvent) {
+        if (event.origin !== thirdPartyOrigin) return;
+        if (event.data && typeof event.data.cookiesBlocked === 'boolean') {
+          cleanup();
+          resolve(event.data.cookiesBlocked);
+        }
+      }
+
+      window.addEventListener('message', onMessage);
+      document.body.appendChild(iframe);
+    });
   }
 
   private testSameSiteCookie(sameSite: string): boolean {
@@ -98,4 +119,4 @@ export class CookieTester {
       return false;
     }
   }
-} 
+}
