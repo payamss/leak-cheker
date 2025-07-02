@@ -445,7 +445,7 @@ const CookieTrackerTest = () => {
   const privacyScore = calculatePrivacyScore();
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="max-w-7xl mx-auto">
       <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center">
         <FiDatabase className="w-8 h-8 mr-3" />
         Cookie & Tracker Test

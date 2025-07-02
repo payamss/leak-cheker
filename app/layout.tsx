@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import NavBar from "./main/NavBar";
+import Sidebar from "./components/Sidebar";
 import Footer from "./main/Footer";
 import "./globals.css";
 
@@ -30,11 +30,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} flex flex-col min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gray-100`}
       >
-        <NavBar />
-        <main className="flex-grow">{children}</main>
-        <Footer />
+        <Sidebar />
+        <div className="lg:ml-64 min-h-screen flex flex-col">
+          <main className="flex-grow p-4 lg:p-6">{children}</main>
+          <Footer />
+        </div>
         <CookieConsent />
       </body>
     </html>
