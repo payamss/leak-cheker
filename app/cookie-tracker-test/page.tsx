@@ -1,657 +1,462 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { FiShield, FiEye, FiDatabase, FiTarget, FiSettings, FiAlertTriangle, FiCheckCircle, FiXCircle, FiInfo, FiExternalLink, FiRefreshCw } from 'react-icons/fi';
-import CookieTrackerInfoBox from './components/CookieTrackerInfoBox';
+import { useState, useEffect } from 'react';
+import { PrivacyTestService, PrivacyTestResult } from '../../utils/privacy-tests';
 
-type TestResult = {
-  name: string;
-  status: 'testing' | 'pass' | 'fail' | 'warning' | 'info';
-  description: string;
-  details?: string;
-  recommendation?: string;
-  severity: 'low' | 'medium' | 'high';
-};
+export default function CookieTrackerTestPage() {
+  const [testResult, setTestResult] = useState<PrivacyTestResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-type BrowserFingerprint = {
-  userAgent: string;
-  language: string;
-  languages: string[];
-  platform: string;
-  cookieEnabled: boolean;
-  doNotTrack: string | null;
-  screenResolution: string;
-  colorDepth: number;
-  timezone: string;
-  hardwareConcurrency: number;
-  deviceMemory?: number;
-  plugins: string[];
-  fonts?: string[];
-  canvas?: string;
-  webgl?: string;
-  localStorage: boolean;
-  sessionStorage: boolean;
-  indexedDB: boolean;
-};
-
-const CookieTrackerTest = () => {
-  const [isClient, setIsClient] = useState(false);
-  const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [fingerprint, setFingerprint] = useState<BrowserFingerprint | null>(null);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testComplete, setTestComplete] = useState(false);
-  const [, setThirdPartyCookieTest] = useState<'testing' | 'enabled' | 'blocked'>('testing');
-
-  // Initialize test results
-  const initializeTests = (): TestResult[] => [
-    {
-      name: 'Third-Party Cookies',
-      status: 'testing',
-      description: 'Testing if third-party cookies are enabled...',
-      severity: 'high'
-    },
-    {
-      name: 'Do Not Track Header',
-      status: 'testing', 
-      description: 'Checking Do Not Track browser setting...',
-      severity: 'medium'
-    },
-    {
-      name: 'Browser Fingerprinting',
-      status: 'testing',
-      description: 'Analyzing browser uniqueness...',
-      severity: 'high'
-    },
-    {
-      name: 'Local Storage',
-      status: 'testing',
-      description: 'Testing local storage capabilities...',
-      severity: 'medium'
-    },
-    {
-      name: 'Canvas Fingerprinting',
-      status: 'testing',
-      description: 'Checking canvas fingerprinting vulnerability...',
-      severity: 'high'
-    },
-    {
-      name: 'WebGL Fingerprinting',
-      status: 'testing',
-      description: 'Testing WebGL fingerprinting exposure...',
-      severity: 'high'
-    },
-    {
-      name: 'Font Detection',
-      status: 'testing',
-      description: 'Analyzing available fonts for fingerprinting...',
-      severity: 'medium'
-    },
-    {
-      name: 'Plugin Detection',
-      status: 'testing',
-      description: 'Checking for trackable browser plugins...',
-      severity: 'medium'
-    }
-  ];
-
-  // Test third-party cookie support
-  const testThirdPartyCookies = async (): Promise<TestResult> => {
-    try {
-      // Try to set a cookie via JavaScript
-      document.cookie = "privacy_test=test; SameSite=None; Secure";
-      
-      // Check if cookie was set
-      const cookieSet = document.cookie.includes('privacy_test=test');
-      
-      if (cookieSet) {
-        setThirdPartyCookieTest('enabled');
-        return {
-          name: 'Third-Party Cookies',
-          status: 'fail',
-          description: 'Third-party cookies are enabled',
-          details: 'Your browser accepts third-party cookies, which can be used for tracking across websites.',
-          recommendation: 'Disable third-party cookies in your browser settings for better privacy.',
-          severity: 'high'
-        };
-      } else {
-        setThirdPartyCookieTest('blocked');
-        return {
-          name: 'Third-Party Cookies',
-          status: 'pass',
-          description: 'Third-party cookies are blocked',
-          details: 'Your browser blocks third-party cookies, providing better privacy protection.',
-          severity: 'high'
-        };
-      }
-    } catch {
-      return {
-        name: 'Third-Party Cookies',
-        status: 'warning',
-        description: 'Could not test third-party cookies',
-        details: 'Cookie testing was blocked or failed.',
-        severity: 'high'
-      };
-    }
-  };
-
-  // Generate canvas fingerprint
-  const generateCanvasFingerprint = (): string => {
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return 'unavailable';
-
-      // Draw some text and shapes for fingerprinting
-      ctx.textBaseline = 'top';
-      ctx.font = '14px Arial';
-      ctx.fillText('Privacy Test Canvas 🔒', 2, 2);
-      
-      ctx.fillStyle = 'rgba(255,0,255,0.5)';
-      ctx.fillRect(100, 5, 80, 20);
-      
-      return canvas.toDataURL().slice(-50); // Last 50 chars for brevity
-    } catch {
-      return 'blocked';
-    }
-  };
-
-  // Generate WebGL fingerprint
-  const generateWebGLFingerprint = (): string => {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl) return 'unavailable';
-
-      const webglContext = gl as WebGLRenderingContext;
-      const renderer = webglContext.getParameter(webglContext.RENDERER);
-      const vendor = webglContext.getParameter(webglContext.VENDOR);
-      return `${vendor} ${renderer}`.slice(0, 50);
-    } catch {
-      return 'blocked';
-    }
-  };
-
-  // Detect available fonts (simplified)
-  const detectFonts = (): string[] => {
-    const testFonts = [
-      'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana', 'Georgia', 
-      'Palatino', 'Garamond', 'Bookman', 'Trebuchet MS', 'Arial Black', 'Impact'
-    ];
-    
-    const availableFonts: string[] = [];
-    
-    // This is a simplified font detection - real fingerprinting is more sophisticated
-    testFonts.forEach(font => {
-      // In a real implementation, you'd measure text rendering differences
-      // For demo purposes, we'll simulate some fonts being available
-      if (Math.random() > 0.3) {
-        availableFonts.push(font);
-      }
-    });
-    
-    return availableFonts;
-  };
-
-  // Get browser plugins
-  const getPlugins = (): string[] => {
-    if (typeof navigator !== 'undefined' && navigator.plugins) {
-      return Array.from(navigator.plugins).map(plugin => plugin.name);
-    }
-    return [];
-  };
-
-  // Generate complete browser fingerprint
-  const generateFingerprint = (): BrowserFingerprint => {
-    const fp: BrowserFingerprint = {
-      userAgent: navigator.userAgent,
-      language: navigator.language,
-      languages: navigator.languages ? Array.from(navigator.languages) : [navigator.language],
-      platform: navigator.platform,
-      cookieEnabled: navigator.cookieEnabled,
-      doNotTrack: navigator.doNotTrack,
-      screenResolution: `${screen.width}x${screen.height}`,
-      colorDepth: screen.colorDepth,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      hardwareConcurrency: navigator.hardwareConcurrency || 0,
-      deviceMemory: (navigator as any).deviceMemory, // eslint-disable-line @typescript-eslint/no-explicit-any
-      plugins: getPlugins(),
-      fonts: detectFonts(),
-      canvas: generateCanvasFingerprint(),
-      webgl: generateWebGLFingerprint(),
-      localStorage: typeof Storage !== 'undefined',
-      sessionStorage: typeof Storage !== 'undefined',
-      indexedDB: typeof indexedDB !== 'undefined'
-    };
-
-    return fp;
-  };
-
-  // Analyze fingerprint uniqueness
-  const analyzeFingerprint = (fp: BrowserFingerprint): TestResult[] => {
-    const results: TestResult[] = [];
-
-    // Do Not Track test
-    results.push({
-      name: 'Do Not Track Header',
-      status: fp.doNotTrack === '1' ? 'pass' : 'fail',
-      description: fp.doNotTrack === '1' ? 'Do Not Track is enabled' : 'Do Not Track is disabled',
-      details: fp.doNotTrack === '1' 
-        ? 'Your browser sends the Do Not Track header, requesting not to be tracked.'
-        : 'Your browser does not send the Do Not Track header.',
-      recommendation: fp.doNotTrack !== '1' ? 'Enable Do Not Track in your browser privacy settings.' : undefined,
-      severity: 'medium'
-    });
-
-    // Browser fingerprinting analysis
-    const fingerprintScore = calculateFingerprintScore(fp);
-    results.push({
-      name: 'Browser Fingerprinting',
-      status: fingerprintScore > 70 ? 'fail' : fingerprintScore > 40 ? 'warning' : 'pass',
-      description: `Browser uniqueness score: ${fingerprintScore}%`,
-      details: fingerprintScore > 70 
-        ? 'Your browser has a highly unique fingerprint, making you easily trackable.'
-        : fingerprintScore > 40
-        ? 'Your browser has a moderately unique fingerprint.'
-        : 'Your browser fingerprint is relatively common.',
-      recommendation: fingerprintScore > 40 ? 'Consider using privacy-focused browser settings or extensions.' : undefined,
-      severity: 'high'
-    });
-
-    // Local storage test
-    results.push({
-      name: 'Local Storage',
-      status: fp.localStorage ? 'warning' : 'pass',
-      description: fp.localStorage ? 'Local storage is available' : 'Local storage is disabled',
-      details: fp.localStorage 
-        ? 'Local storage can be used to track you across browser sessions.'
-        : 'Local storage is disabled, preventing persistent tracking.',
-      recommendation: fp.localStorage ? 'Consider disabling local storage or using private browsing mode.' : undefined,
-      severity: 'medium'
-    });
-
-    // Canvas fingerprinting test
-    results.push({
-      name: 'Canvas Fingerprinting',
-      status: fp.canvas === 'blocked' ? 'pass' : fp.canvas === 'unavailable' ? 'info' : 'fail',
-      description: fp.canvas === 'blocked' ? 'Canvas fingerprinting is blocked' : 
-                  fp.canvas === 'unavailable' ? 'Canvas API unavailable' : 'Canvas fingerprinting possible',
-      details: fp.canvas === 'blocked' 
-        ? 'Canvas fingerprinting is successfully blocked.'
-        : fp.canvas === 'unavailable'
-        ? 'Canvas API is not available in this environment.'
-        : 'Your browser allows canvas fingerprinting, which creates a unique identifier.',
-      recommendation: fp.canvas !== 'blocked' && fp.canvas !== 'unavailable' 
-        ? 'Use a browser extension to block canvas fingerprinting.' : undefined,
-      severity: 'high'
-    });
-
-    // WebGL fingerprinting test
-    results.push({
-      name: 'WebGL Fingerprinting',
-      status: fp.webgl === 'blocked' ? 'pass' : fp.webgl === 'unavailable' ? 'info' : 'fail',
-      description: fp.webgl === 'blocked' ? 'WebGL fingerprinting is blocked' :
-                  fp.webgl === 'unavailable' ? 'WebGL unavailable' : 'WebGL fingerprinting possible',
-      details: fp.webgl === 'blocked'
-        ? 'WebGL fingerprinting is successfully blocked.'
-        : fp.webgl === 'unavailable'
-        ? 'WebGL is not available in this environment.'
-        : 'Your browser exposes WebGL information that can be used for fingerprinting.',
-      recommendation: fp.webgl !== 'blocked' && fp.webgl !== 'unavailable'
-        ? 'Consider disabling WebGL or using privacy extensions.' : undefined,
-      severity: 'high'
-    });
-
-    // Font detection test
-    results.push({
-      name: 'Font Detection',
-      status: (fp.fonts?.length || 0) > 8 ? 'fail' : (fp.fonts?.length || 0) > 4 ? 'warning' : 'pass',
-      description: `${fp.fonts?.length || 0} fonts detected`,
-      details: (fp.fonts?.length || 0) > 8
-        ? 'Many fonts are available for fingerprinting, making you more unique.'
-        : (fp.fonts?.length || 0) > 4
-        ? 'Some fonts are available for fingerprinting.'
-        : 'Few fonts available, reducing fingerprinting potential.',
-      recommendation: (fp.fonts?.length || 0) > 4 
-        ? 'Consider using a browser that limits font enumeration.' : undefined,
-      severity: 'medium'
-    });
-
-    // Plugin detection test
-    results.push({
-      name: 'Plugin Detection',
-      status: fp.plugins.length === 0 ? 'pass' : fp.plugins.length > 3 ? 'fail' : 'warning',
-      description: fp.plugins.length === 0 ? 'No plugins detected' : `${fp.plugins.length} plugins detected`,
-      details: fp.plugins.length === 0
-        ? 'No browser plugins detected, reducing fingerprinting surface.'
-        : `Detected plugins: ${fp.plugins.slice(0, 3).join(', ')}${fp.plugins.length > 3 ? '...' : ''}`,
-      recommendation: fp.plugins.length > 0 
-        ? 'Consider disabling unnecessary browser plugins.' : undefined,
-      severity: 'medium'
-    });
-
-    return results;
-  };
-
-  // Calculate fingerprint uniqueness score
-  const calculateFingerprintScore = (fp: BrowserFingerprint): number => {
-    let score = 0;
-    
-    // User agent (common = lower score)
-    if (fp.userAgent.includes('Chrome')) score += 10;
-    else if (fp.userAgent.includes('Firefox')) score += 15;
-    else score += 25;
-    
-    // Screen resolution (common resolutions = lower score)
-    const commonResolutions = ['1920x1080', '1366x768', '1440x900', '1536x864'];
-    if (!commonResolutions.includes(fp.screenResolution)) score += 20;
-    else score += 5;
-    
-    // Timezone (common timezones = lower score)
-    const commonTimezones = ['America/New_York', 'Europe/London', 'America/Los_Angeles'];
-    if (!commonTimezones.includes(fp.timezone)) score += 15;
-    else score += 3;
-    
-    // Languages
-    if (fp.languages.length > 2) score += 10;
-    
-    // Plugins
-    score += Math.min(fp.plugins.length * 5, 25);
-    
-    // Fonts
-    score += Math.min((fp.fonts?.length || 0) * 2, 20);
-    
-    // Hardware
-    if (fp.hardwareConcurrency > 8) score += 10;
-    if (fp.deviceMemory && fp.deviceMemory > 8) score += 10;
-    
-    return Math.min(score, 100);
-  };
-
-  // Start comprehensive privacy test
-  const startPrivacyTest = async () => {
-    setIsTesting(true);
-    setTestComplete(false);
-    
-    // Initialize tests
-    const initialTests = initializeTests();
-    setTestResults(initialTests);
+  const runTest = async () => {
+    setIsLoading(true);
+    setError(null);
     
     try {
-      // Generate browser fingerprint
-      const fp = generateFingerprint();
-      setFingerprint(fp);
-      
-      // Test third-party cookies
-      const thirdPartyResult = await testThirdPartyCookies();
-      
-      // Analyze fingerprint
-      const fingerprintResults = analyzeFingerprint(fp);
-      
-      // Combine all results
-      const allResults = [thirdPartyResult, ...fingerprintResults];
-      setTestResults(allResults);
-      
-      setTestComplete(true);
-    } catch (error) {
-      console.error('Privacy test failed:', error);
+      const privacyTestService = PrivacyTestService.getInstance();
+      const result = await privacyTestService.runCompleteTest();
+      setTestResult(result);
+    } catch (err) {
+      setError('Failed to run privacy test. Please try again.');
+      console.error('Privacy test error:', err);
     } finally {
-      setIsTesting(false);
+      setIsLoading(false);
     }
-  };
-
-  // Get status icon and color
-  const getStatusInfo = (status: TestResult['status']) => {
-    switch (status) {
-      case 'pass':
-        return { icon: FiCheckCircle, color: 'text-green-600', bg: 'bg-green-100', text: 'Good' };
-      case 'warning':
-        return { icon: FiAlertTriangle, color: 'text-yellow-600', bg: 'bg-yellow-100', text: 'Warning' };
-      case 'fail':
-        return { icon: FiXCircle, color: 'text-red-600', bg: 'bg-red-100', text: 'Privacy Risk' };
-      case 'info':
-        return { icon: FiInfo, color: 'text-blue-600', bg: 'bg-blue-100', text: 'Info' };
-      case 'testing':
-        return { icon: FiRefreshCw, color: 'text-gray-600', bg: 'bg-gray-100', text: 'Testing...' };
-      default:
-        return { icon: FiInfo, color: 'text-gray-600', bg: 'bg-gray-100', text: 'Unknown' };
-    }
-  };
-
-  // Calculate overall privacy score
-  const calculatePrivacyScore = (): number => {
-    if (!testComplete) return 0;
-    
-    const passCount = testResults.filter(r => r.status === 'pass').length;
-    const totalTests = testResults.length;
-    
-    return Math.round((passCount / totalTests) * 100);
   };
 
   useEffect(() => {
-    setIsClient(true);
+    runTest();
   }, []);
 
-  if (!isClient) {
-    return (
-      <div className="p-6 bg-gray-100 min-h-screen">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-          Cookie & Tracker Test
-        </h2>
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return 'text-green-600';
+    if (score >= 40) return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
-  const privacyScore = calculatePrivacyScore();
+  const getScoreDescription = (score: number) => {
+    if (score >= 80) return 'Excellent privacy protection';
+    if (score >= 60) return 'Good privacy protection';
+    if (score >= 40) return 'Moderate privacy protection';
+    if (score >= 20) return 'Poor privacy protection';
+    return 'Your privacy is at serious risk';
+  };
+
+  const getRiskLevel = (isBlocked: boolean, invertLogic = false) => {
+    const blocked = invertLogic ? !isBlocked : isBlocked;
+    return blocked ? 'Good' : 'Privacy Risk';
+  };
+
+  const getRiskColor = (isBlocked: boolean, invertLogic = false) => {
+    const blocked = invertLogic ? !isBlocked : isBlocked;
+    return blocked ? 'text-green-600' : 'text-red-600';
+  };
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center">
-        <FiDatabase className="w-8 h-8 mr-3" />
-        Cookie & Tracker Test
-      </h2>
-
-      {/* Info Box */}
-      <CookieTrackerInfoBox />
-
-      {/* Privacy Score */}
-      {testComplete && (
-        <div className={`p-6 rounded-lg shadow-md mb-6 ${
-          privacyScore >= 70 ? 'bg-green-100' : privacyScore >= 40 ? 'bg-yellow-100' : 'bg-red-100'
-        }`}>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <FiShield className={`w-6 h-6 mr-2 ${
-              privacyScore >= 70 ? 'text-green-600' : privacyScore >= 40 ? 'text-yellow-600' : 'text-red-600'
-            }`} />
-            Privacy Protection Score: <span className={
-              privacyScore >= 70 ? 'text-green-600' : privacyScore >= 40 ? 'text-yellow-600' : 'text-red-600'
-            }>{privacyScore}%</span>
-          </h3>
-          
-          <p className="text-gray-700">
-            {privacyScore >= 70 
-              ? 'Excellent! Your browser has strong privacy protection.'
-              : privacyScore >= 40
-              ? 'Good privacy protection, but there\'s room for improvement.'
-              : 'Your privacy is at risk. Consider implementing the recommendations below.'}
-          </p>
-        </div>
-      )}
-
-      {/* Test Control */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6 text-center">
-        {!isTesting && !testComplete && (
-          <button
-            onClick={startPrivacyTest}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center mx-auto"
-          >
-            <FiEye className="w-5 h-5 mr-2" />
-            Start Privacy & Tracking Analysis
-          </button>
-        )}
-        
-        {testComplete && (
-          <button
-            onClick={startPrivacyTest}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center mx-auto"
-          >
-            <FiRefreshCw className="w-5 h-5 mr-2" />
-            Run Test Again
-          </button>
-        )}
-      </div>
-
-      {/* Test Results */}
-      {testResults.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <FiTarget className="w-5 h-5 mr-2" />
-            Privacy Test Results
-          </h3>
-          
-          <div className="space-y-4">
-            {testResults.map((result, index) => {
-              const statusInfo = getStatusInfo(result.status);
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              Cookie & Tracker Test
+            </h1>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <h2 className="text-lg font-semibold text-blue-900 mb-3">
+                About Cookie & Tracker Testing
+              </h2>
+              <p className="text-blue-800 mb-4">
+                This comprehensive privacy test analyzes how your browser handles cookies, tracking, and fingerprinting. 
+                It helps you understand your digital privacy exposure and provides actionable recommendations.
+              </p>
               
-              return (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-gray-800 flex items-center">
-                      <statusInfo.icon className={`w-5 h-5 mr-2 ${statusInfo.color} ${result.status === 'testing' ? 'animate-spin' : ''}`} />
-                      {result.name}
-                    </h4>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.bg} ${statusInfo.color}`}>
-                      {statusInfo.text}
-                    </span>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-2">{result.description}</p>
-                  
-                  {result.details && (
-                    <p className="text-sm text-gray-500 mb-2">{result.details}</p>
-                  )}
-                  
-                  {result.recommendation && (
-                    <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                      <p className="text-sm text-blue-800">
-                        <strong>Recommendation:</strong> {result.recommendation}
-                      </p>
-                    </div>
-                  )}
+              <div className="grid md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-2">Cookie Analysis</h3>
+                  <ul className="text-blue-700 space-y-1">
+                    <li>• Third-party cookie detection</li>
+                    <li>• Local storage capabilities</li>
+                    <li>• Session storage testing</li>
+                    <li>• Cookie policy compliance</li>
+                  </ul>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Browser Fingerprint Details */}
-      {fingerprint && testComplete && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <FiSettings className="w-5 h-5 mr-2" />
-            Browser Fingerprint Analysis
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <strong>User Agent:</strong> <span className="text-gray-600">{fingerprint.userAgent.slice(0, 50)}...</span>
-            </div>
-            <div>
-              <strong>Language:</strong> <span className="text-gray-600">{fingerprint.language}</span>
-            </div>
-            <div>
-              <strong>Platform:</strong> <span className="text-gray-600">{fingerprint.platform}</span>
-            </div>
-            <div>
-              <strong>Screen:</strong> <span className="text-gray-600">{fingerprint.screenResolution} ({fingerprint.colorDepth}-bit)</span>
-            </div>
-            <div>
-              <strong>Timezone:</strong> <span className="text-gray-600">{fingerprint.timezone}</span>
-            </div>
-            <div>
-              <strong>CPU Cores:</strong> <span className="text-gray-600">{fingerprint.hardwareConcurrency}</span>
-            </div>
-            {fingerprint.deviceMemory && (
-              <div>
-                <strong>Device Memory:</strong> <span className="text-gray-600">{fingerprint.deviceMemory} GB</span>
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-2">Fingerprinting Tests</h3>
+                  <ul className="text-blue-700 space-y-1">
+                    <li>• Browser fingerprint uniqueness</li>
+                    <li>• Canvas fingerprinting detection</li>
+                    <li>• WebGL fingerprinting analysis</li>
+                    <li>• Font and plugin enumeration</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-2">Privacy Protection Guidance</h3>
+                  <p className="text-blue-700">
+                    Based on your test results, you'll receive personalized recommendations for browser settings, 
+                    privacy extensions, and alternative browsers to enhance your digital privacy and reduce tracking.
+                  </p>
+                </div>
               </div>
-            )}
-            <div>
-              <strong>Do Not Track:</strong> <span className="text-gray-600">{fingerprint.doNotTrack || 'Not set'}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Privacy Recommendations */}
-      {testComplete && (
-        <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-semibold text-blue-800 mb-4 flex items-center">
-            <FiShield className="w-6 h-6 mr-2" />
-            Privacy Enhancement Recommendations
-          </h3>
-          
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-semibold text-blue-700 mb-2">Browser Settings:</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm text-blue-800">
-                <li>Enable &quot;Do Not Track&quot; in privacy settings</li>
-                <li>Block third-party cookies</li>
-                <li>Disable location services</li>
-                <li>Clear cookies and site data regularly</li>
-                <li>Use private/incognito browsing mode</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-blue-700 mb-2">Recommended Browser Extensions:</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm text-blue-800">
-                <li>uBlock Origin - Blocks ads and trackers</li>
-                <li>Privacy Badger - Prevents tracking</li>
-                <li>ClearURLs - Removes tracking parameters</li>
-                <li>Decentraleyes - Protects against tracking</li>
-                <li>CanvasBlocker - Prevents canvas fingerprinting</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-blue-700 mb-2">Privacy-Focused Browsers:</h4>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href="https://www.mozilla.org/firefox/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200 transition-colors"
-                >
-                  Firefox
-                  <FiExternalLink className="w-3 h-3 ml-1" />
-                </a>
-                <a
-                  href="https://brave.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200 transition-colors"
-                >
-                  Brave Browser
-                  <FiExternalLink className="w-3 h-3 ml-1" />
-                </a>
-                <a
-                  href="https://www.torproject.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200 transition-colors"
-                >
-                  Tor Browser
-                  <FiExternalLink className="w-3 h-3 ml-1" />
-                </a>
+              
+              <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> This tool performs client-side tests only and does not collect or store any personal data. 
+                  All analysis is done locally in your browser for maximum privacy.
+                </p>
               </div>
             </div>
           </div>
+
+          {/* Privacy Score */}
+          {testResult && (
+            <div className="text-center mb-8">
+              <div className="inline-block bg-white border-2 border-gray-200 rounded-lg p-6 shadow-sm">
+                <h2 className="text-lg font-semibold text-gray-700 mb-2">Privacy Protection Score:</h2>
+                <div className={`text-6xl font-bold ${getScoreColor(testResult.privacyScore)} mb-2`}>
+                  {testResult.privacyScore}%
+                </div>
+                <p className="text-gray-600 mb-4">{getScoreDescription(testResult.privacyScore)}</p>
+                <button
+                  onClick={runTest}
+                  disabled={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
+                >
+                  {isLoading ? 'Running Test...' : 'Run Test Again'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Running comprehensive privacy test...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-800">{error}</p>
+              <button
+                onClick={runTest}
+                className="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {/* Test Results */}
+          {testResult && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Privacy Test Results</h2>
+              
+              {/* Third-Party Cookies */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Third-Party Cookies</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.cookies.thirdPartyCookiesBlocked 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {getRiskLevel(testResult.cookies.thirdPartyCookiesBlocked)}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-2">
+                  {testResult.cookies.thirdPartyCookiesBlocked 
+                    ? 'Third-party cookies are blocked' 
+                    : 'Third-party cookies are enabled'}
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  Your browser {testResult.cookies.sameSiteNoneBlocked ? 'blocks' : 'accepts'} SameSite=None cookies, 
+                  which {testResult.cookies.sameSiteNoneBlocked ? 'prevents' : 'can be used for'} cross-site tracking. 
+                  Regular: {!testResult.cookies.sameSiteNoneBlocked ? 'true' : 'false'}, 
+                  Lax: {!testResult.cookies.sameSiteLaxBlocked ? 'true' : 'false'}, 
+                  Strict: {!testResult.cookies.sameSiteStrictBlocked ? 'true' : 'false'}
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Recommendation:</strong> {testResult.cookies.thirdPartyCookiesBlocked 
+                    ? 'Great! Keep third-party cookies disabled for maximum privacy.' 
+                    : 'Disable third-party cookies in your browser settings for better privacy.'}
+                </p>
+              </div>
+
+              {/* Do Not Track Header */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Do Not Track Header</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.browser.doNotTrack 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {getRiskLevel(testResult.browser.doNotTrack)}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-3">
+                  {testResult.browser.doNotTrack 
+                    ? 'Do Not Track is enabled' 
+                    : 'Do Not Track is disabled'}
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  {testResult.browser.doNotTrack 
+                    ? 'Your browser sends the Do Not Track header, requesting not to be tracked.' 
+                    : 'Your browser does not send the Do Not Track header.'}
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Recommendation:</strong> {testResult.browser.doNotTrack 
+                    ? 'Excellent! Keep Do Not Track enabled.' 
+                    : 'Enable Do Not Track in your browser privacy settings.'}
+                </p>
+              </div>
+
+              {/* Browser Fingerprinting */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Browser Fingerprinting</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.fingerprinting.uniquenessScore < 50 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {testResult.fingerprinting.uniquenessScore < 50 ? 'Good' : 'Privacy Risk'}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-2">
+                  Browser uniqueness score: {testResult.fingerprinting.uniquenessScore}%
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  Detected browser: {testResult.browser.name}. Your browser has a {
+                    testResult.fingerprinting.uniquenessScore > 80 ? 'highly unique' : 
+                    testResult.fingerprinting.uniquenessScore > 50 ? 'somewhat unique' : 'relatively common'
+                  } fingerprint, making you {
+                    testResult.fingerprinting.uniquenessScore > 80 ? 'easily trackable' : 
+                    testResult.fingerprinting.uniquenessScore > 50 ? 'moderately trackable' : 'harder to track'
+                  }. Screen: {testResult.hardware.screen.width}x{testResult.hardware.screen.height}, 
+                  Cores: {testResult.hardware.cpuCores}, Memory: {testResult.hardware.deviceMemory}GB
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Recommendation:</strong> {testResult.fingerprinting.uniquenessScore > 70 
+                    ? 'Consider using privacy-focused browser settings or extensions.' 
+                    : 'Good! Your fingerprint is relatively common.'}
+                </p>
+              </div>
+
+              {/* Local Storage */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Local Storage</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.cookies.localStorageBlocked 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {testResult.cookies.localStorageBlocked ? 'Good' : 'Warning'}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-3">
+                  {testResult.cookies.localStorageBlocked 
+                    ? 'Local storage is blocked' 
+                    : 'Local storage is available'}
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  {testResult.cookies.localStorageBlocked 
+                    ? 'Local storage is properly blocked, preventing persistent tracking.' 
+                    : 'Local storage can be used to track you across browser sessions.'}
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Recommendation:</strong> {testResult.cookies.localStorageBlocked 
+                    ? 'Perfect! Local storage blocking is active.' 
+                    : 'Consider disabling local storage or using private browsing mode.'}
+                </p>
+              </div>
+
+              {/* Canvas Fingerprinting */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Canvas Fingerprinting</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.fingerprinting.canvasBlocked 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {getRiskLevel(testResult.fingerprinting.canvasBlocked)}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-3">
+                  {testResult.fingerprinting.canvasBlocked 
+                    ? 'Canvas fingerprinting is blocked' 
+                    : 'Canvas fingerprinting possible'}
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  {testResult.fingerprinting.canvasBlocked 
+                    ? 'Canvas fingerprinting is properly blocked or randomized.' 
+                    : 'Your browser allows canvas fingerprinting, which creates a unique identifier.'}
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Recommendation:</strong> {testResult.fingerprinting.canvasBlocked 
+                    ? 'Excellent! Canvas protection is working.' 
+                    : 'Use a browser extension to block canvas fingerprinting.'}
+                </p>
+              </div>
+
+              {/* WebGL Fingerprinting */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">WebGL Fingerprinting</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.fingerprinting.webglBlocked 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {getRiskLevel(testResult.fingerprinting.webglBlocked)}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-3">
+                  {testResult.fingerprinting.webglBlocked 
+                    ? 'WebGL fingerprinting is blocked' 
+                    : 'WebGL fingerprinting possible'}
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  WebGL fingerprinting is {testResult.fingerprinting.webglBlocked ? 'blocked or restricted' : 'available for tracking'}.
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Recommendation:</strong> {testResult.fingerprinting.webglBlocked 
+                    ? 'Great! WebGL fingerprinting protection is active.' 
+                    : 'Consider disabling WebGL in your browser settings.'}
+                </p>
+              </div>
+
+              {/* Font Detection */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Font Detection</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.fingerprinting.fontsDetected.length < 10 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {testResult.fingerprinting.fontsDetected.length < 10 ? 'Good' : 'Privacy Risk'}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-3">
+                  {testResult.fingerprinting.fontsDetected.length} fonts detected
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  {testResult.fingerprinting.fontsDetected.length < 10 
+                    ? 'Font enumeration is limited, providing better privacy.' 
+                    : 'Many fonts are available for fingerprinting, making you more unique.'}
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Recommendation:</strong> {testResult.fingerprinting.fontsDetected.length < 10 
+                    ? 'Excellent! Font enumeration is properly limited.' 
+                    : 'Consider using a browser that limits font enumeration.'}
+                </p>
+              </div>
+
+              {/* Plugin Detection */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Plugin Detection</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    testResult.fingerprinting.pluginsDetected.length < 3 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {testResult.fingerprinting.pluginsDetected.length < 3 ? 'Good' : 'Privacy Risk'}
+                  </span>
+                </div>
+                <p className="text-gray-700 mb-3">
+                  {testResult.fingerprinting.pluginsDetected.length} plugins detected
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  {testResult.fingerprinting.pluginsDetected.length > 0 && (
+                    <>Detected plugins: {testResult.fingerprinting.pluginsDetected.slice(0, 3).join(', ')}
+                    {testResult.fingerprinting.pluginsDetected.length > 3 && '...'}</>
+                  )}
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Recommendation:</strong> {testResult.fingerprinting.pluginsDetected.length < 3 
+                    ? 'Good! Plugin enumeration is limited.' 
+                    : 'Consider disabling unnecessary browser plugins.'}
+                </p>
+              </div>
+
+              {/* Browser Fingerprint Analysis */}
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Browser Fingerprint Analysis</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p><strong>User Agent:</strong> {testResult.browser.userAgent.substring(0, 50)}...</p>
+                    <p><strong>Language:</strong> {testResult.browser.language}</p>
+                    <p><strong>Platform:</strong> {testResult.browser.platform}</p>
+                    <p><strong>Screen:</strong> {testResult.hardware.screen.width}x{testResult.hardware.screen.height} ({testResult.hardware.screen.colorDepth}-bit)</p>
+                  </div>
+                  <div>
+                    <p><strong>Timezone:</strong> {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
+                    <p><strong>CPU Cores:</strong> {testResult.hardware.cpuCores}</p>
+                    <p><strong>Device Memory:</strong> {testResult.hardware.deviceMemory} GB</p>
+                    <p><strong>Do Not Track:</strong> {testResult.browser.doNotTrack ? '1' : 'Not set'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommendations */}
+              <div className="bg-blue-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4">Privacy Enhancement Recommendations</h3>
+                
+                {testResult.recommendations.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-blue-800 mb-2">Personalized Recommendations:</h4>
+                    <ul className="space-y-2">
+                      {testResult.recommendations.map((rec, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-blue-600 mr-2">•</span>
+                          <span className="text-blue-800">{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="grid md:grid-cols-3 gap-6 text-sm">
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-3">Browser Settings:</h4>
+                    <ul className="space-y-2 text-blue-700">
+                      <li>Enable "Do Not Track" in privacy settings</li>
+                      <li>Block third-party cookies</li>
+                      <li>Disable location services</li>
+                      <li>Clear cookies and site data regularly</li>
+                      <li>Use private/incognito browsing mode</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-3">Recommended Browser Extensions:</h4>
+                    <ul className="space-y-2 text-blue-700">
+                      <li>uBlock Origin - Blocks ads and trackers</li>
+                      <li>Privacy Badger - Prevents tracking</li>
+                      <li>ClearURLs - Removes tracking parameters</li>
+                      <li>Decentraleyes - Protects against tracking</li>
+                      <li>CanvasBlocker - Prevents canvas fingerprinting</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-3">Privacy-Focused Browsers:</h4>
+                    <ul className="space-y-2 text-blue-700">
+                      <li>Firefox</li>
+                      <li>Brave Browser</li>
+                      <li>Tor Browser</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
-};
-
-export default CookieTrackerTest; 
+} 
