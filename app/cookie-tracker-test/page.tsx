@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PrivacyTestService, PrivacyTestResult } from '../../utils/privacy-tests';
+import { PrivacyTestService, DetailedPrivacyTestResult, TechnicalReport, UserFriendlyReport } from '../../utils/privacy-tests';
 
 export default function CookieTrackerTestPage() {
-  const [testResult, setTestResult] = useState<PrivacyTestResult | null>(null);
+  const [detailedResult, setDetailedResult] = useState<DetailedPrivacyTestResult | null>(null);
+  const [technicalReport, setTechnicalReport] = useState<TechnicalReport | null>(null);
+  const [userFriendlyReport, setUserFriendlyReport] = useState<UserFriendlyReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'technical' | 'recommendations'>('overview');
+  const [showRawData, setShowRawData] = useState(false);
 
   const runTest = async () => {
     setIsLoading(true);
@@ -14,8 +18,17 @@ export default function CookieTrackerTestPage() {
     
     try {
       const privacyTestService = PrivacyTestService.getInstance();
-      const result = await privacyTestService.runCompleteTest();
-      setTestResult(result);
+      
+      // Run detailed test
+      const result = await privacyTestService.runDetailedTest();
+      setDetailedResult(result);
+      
+      // Generate both report formats
+      const techReport = await privacyTestService.generateReport('technical') as TechnicalReport;
+      const friendlyReport = await privacyTestService.generateReport('user-friendly') as UserFriendlyReport;
+      
+      setTechnicalReport(techReport);
+      setUserFriendlyReport(friendlyReport);
     } catch (err) {
       setError('Failed to run privacy test. Please try again.');
       console.error('Privacy test error:', err);
@@ -24,105 +37,167 @@ export default function CookieTrackerTestPage() {
     }
   };
 
+  const exportReport = async (format: 'json' | 'markdown' | 'html' | 'csv') => {
+    if (!detailedResult) return;
+    
+    try {
+      const privacyTestService = PrivacyTestService.getInstance();
+      const exportData = await privacyTestService.exportReport(format);
+      
+      const blob = new Blob([exportData], { 
+        type: format === 'json' ? 'application/json' : 
+              format === 'html' ? 'text/html' : 
+              format === 'csv' ? 'text/csv' : 'text/markdown'
+      });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `privacy-report-${new Date().toISOString().split('T')[0]}.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
+
   useEffect(() => {
     runTest();
   }, []);
 
   const getScoreColor = (score: number) => {
-    if (score >= 70) return 'text-green-600';
-    if (score >= 40) return 'text-yellow-600';
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    if (score >= 40) return 'text-orange-600';
     return 'text-red-600';
   };
 
-  const getScoreDescription = (score: number) => {
-    if (score >= 80) return 'Excellent privacy protection';
-    if (score >= 60) return 'Good privacy protection';
-    if (score >= 40) return 'Moderate privacy protection';
-    if (score >= 20) return 'Poor privacy protection';
-    return 'Your privacy is at serious risk';
+  const getScoreBgColor = (score: number) => {
+    if (score >= 80) return 'bg-green-50 border-green-200';
+    if (score >= 60) return 'bg-yellow-50 border-yellow-200';
+    if (score >= 40) return 'bg-orange-50 border-orange-200';
+    return 'bg-red-50 border-red-200';
   };
 
-  const getRiskLevel = (isBlocked: boolean, invertLogic = false) => {
-    const blocked = invertLogic ? !isBlocked : isBlocked;
-    return blocked ? 'Good' : 'Privacy Risk';
+  const getRiskBadgeColor = (status: 'good' | 'warning' | 'risk') => {
+    switch (status) {
+      case 'good': return 'bg-green-100 text-green-800';
+      case 'warning': return 'bg-yellow-100 text-yellow-800';
+      case 'risk': return 'bg-red-100 text-red-800';
+    }
   };
 
-  const getRiskColor = (isBlocked: boolean, invertLogic = false) => {
-    const blocked = invertLogic ? !isBlocked : isBlocked;
-    return blocked ? 'text-green-600' : 'text-red-600';
+  const getPriorityColor = (priority: 'high' | 'medium' | 'low') => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800 border-red-300';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'low': return 'bg-blue-100 text-blue-800 border-blue-300';
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Cookie & Tracker Test
+              🔒 Advanced Privacy & Cookie Test
             </h1>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
               <h2 className="text-lg font-semibold text-blue-900 mb-3">
-                About Cookie & Tracker Testing
+                Comprehensive Privacy Analysis Suite
               </h2>
               <p className="text-blue-800 mb-4">
-                This comprehensive privacy test analyzes how your browser handles cookies, tracking, and fingerprinting. 
-                It helps you understand your digital privacy exposure and provides actionable recommendations.
+                Our advanced privacy testing suite performs deep analysis of your browser's privacy protection capabilities, 
+                including cookie policies, fingerprinting resistance, hardware exposure, and tracking vulnerabilities.
               </p>
               
-              <div className="grid md:grid-cols-3 gap-4 text-sm">
+              <div className="grid md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">Cookie Analysis</h3>
+                  <h3 className="font-semibold text-blue-900 mb-2">🍪 Cookie Analysis</h3>
                   <ul className="text-blue-700 space-y-1">
-                    <li>• Third-party cookie detection</li>
-                    <li>• Local storage capabilities</li>
-                    <li>• Session storage testing</li>
-                    <li>• Cookie policy compliance</li>
+                    <li>• Third-party cookies</li>
+                    <li>• SameSite policies</li>
+                    <li>• Storage capabilities</li>
+                    <li>• Cross-site indicators</li>
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">Fingerprinting Tests</h3>
+                  <h3 className="font-semibold text-blue-900 mb-2">🎭 Fingerprinting</h3>
                   <ul className="text-blue-700 space-y-1">
-                    <li>• Browser fingerprint uniqueness</li>
-                    <li>• Canvas fingerprinting detection</li>
-                    <li>• WebGL fingerprinting analysis</li>
-                    <li>• Font and plugin enumeration</li>
+                    <li>• Canvas fingerprinting</li>
+                    <li>• WebGL analysis</li>
+                    <li>• Font enumeration</li>
+                    <li>• Plugin detection</li>
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">Privacy Protection Guidance</h3>
-                  <p className="text-blue-700">
-                    Based on your test results, you'll receive personalized recommendations for browser settings, 
-                    privacy extensions, and alternative browsers to enhance your digital privacy and reduce tracking.
-                  </p>
+                  <h3 className="font-semibold text-blue-900 mb-2">🖥️ Hardware Exposure</h3>
+                  <ul className="text-blue-700 space-y-1">
+                    <li>• CPU cores detection</li>
+                    <li>• Memory analysis</li>
+                    <li>• Screen properties</li>
+                    <li>• Spoofing detection</li>
+                  </ul>
                 </div>
-              </div>
-              
-              <div className="mt-4 p-3 bg-blue-100 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> This tool performs client-side tests only and does not collect or store any personal data. 
-                  All analysis is done locally in your browser for maximum privacy.
-                </p>
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-2">📊 Professional Reports</h3>
+                  <ul className="text-blue-700 space-y-1">
+                    <li>• Executive summaries</li>
+                    <li>• Technical details</li>
+                    <li>• Export formats</li>
+                    <li>• Implementation guides</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Privacy Score */}
-          {testResult && (
-            <div className="text-center mb-8">
-              <div className="inline-block bg-white border-2 border-gray-200 rounded-lg p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-700 mb-2">Privacy Protection Score:</h2>
-                <div className={`text-6xl font-bold ${getScoreColor(testResult.privacyScore)} mb-2`}>
-                  {testResult.privacyScore}%
+          {/* Privacy Score Dashboard */}
+          {detailedResult && (
+            <div className="mb-8">
+              <div className={`rounded-lg border-2 p-6 ${getScoreBgColor(detailedResult.userFriendly.privacyScore)}`}>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Privacy Protection Score</h2>
+                    <div className={`text-5xl font-bold ${getScoreColor(detailedResult.userFriendly.privacyScore)} mb-2`}>
+                      {detailedResult.userFriendly.privacyScore}%
+                    </div>
+                    <p className="text-gray-700">{technicalReport?.summary.riskLevel.toUpperCase()} Risk Level</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="mb-4">
+                      <span className="text-sm text-gray-600">Tests Passed: </span>
+                      <span className="font-semibold text-green-600">{technicalReport?.summary.testsPassed}</span>
+                      <span className="text-gray-600"> / </span>
+                      <span className="font-semibold">{technicalReport?.summary.totalTests}</span>
+                    </div>
+                    <div className="space-x-2">
+                      <button
+                        onClick={runTest}
+                        disabled={isLoading}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium disabled:opacity-50"
+                      >
+                        {isLoading ? 'Testing...' : '🔄 Run Test Again'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-gray-600 mb-4">{getScoreDescription(testResult.privacyScore)}</p>
-                <button
-                  onClick={runTest}
-                  disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50"
-                >
-                  {isLoading ? 'Running Test...' : 'Run Test Again'}
-                </button>
+
+                {/* Risk Badges */}
+                {userFriendlyReport && (
+                  <div className="flex flex-wrap gap-3">
+                    {userFriendlyReport.visualElements.riskBadges.map((badge, index) => (
+                      <div
+                        key={index}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${getRiskBadgeColor(badge.status)}`}
+                      >
+                        {badge.icon} {badge.test}: {badge.status === 'good' ? 'Protected' : badge.status === 'warning' ? 'Partial' : 'At Risk'}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -131,328 +206,464 @@ export default function CookieTrackerTestPage() {
           {isLoading && (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Running comprehensive privacy test...</p>
+              <p className="text-gray-600">Running comprehensive privacy analysis...</p>
+              <p className="text-sm text-gray-500 mt-2">Testing cookies, fingerprinting, hardware exposure, and more...</p>
             </div>
           )}
 
           {/* Error State */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-800">{error}</p>
+              <div className="flex items-center mb-2">
+                <span className="text-red-500 text-xl mr-2">⚠️</span>
+                <h3 className="font-semibold text-red-800">Test Failed</h3>
+              </div>
+              <p className="text-red-700 mb-3">{error}</p>
               <button
                 onClick={runTest}
-                className="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium"
               >
-                Try Again
+                🔄 Retry Test
               </button>
             </div>
           )}
 
-          {/* Test Results */}
-          {testResult && (
+          {/* Test Results Tabs */}
+          {detailedResult && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Privacy Test Results</h2>
-              
-              {/* Third-Party Cookies */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">Third-Party Cookies</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    testResult.cookies.thirdPartyCookiesBlocked 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {getRiskLevel(testResult.cookies.thirdPartyCookiesBlocked)}
-                  </span>
-                </div>
-                <p className="text-gray-700 mb-2">
-                  {testResult.cookies.thirdPartyCookiesBlocked 
-                    ? 'Third-party cookies are blocked' 
-                    : 'Third-party cookies are enabled'}
-                </p>
-                <p className="text-gray-600 text-sm mb-3">
-                  Your browser {testResult.cookies.sameSiteNoneBlocked ? 'blocks' : 'accepts'} SameSite=None cookies, 
-                  which {testResult.cookies.sameSiteNoneBlocked ? 'prevents' : 'can be used for'} cross-site tracking. 
-                  Regular: {!testResult.cookies.sameSiteNoneBlocked ? 'true' : 'false'}, 
-                  Lax: {!testResult.cookies.sameSiteLaxBlocked ? 'true' : 'false'}, 
-                  Strict: {!testResult.cookies.sameSiteStrictBlocked ? 'true' : 'false'}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Recommendation:</strong> {testResult.cookies.thirdPartyCookiesBlocked 
-                    ? 'Great! Keep third-party cookies disabled for maximum privacy.' 
-                    : 'Disable third-party cookies in your browser settings for better privacy.'}
-                </p>
+              {/* Tab Navigation */}
+              <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8">
+                  {[
+                    { id: 'overview', label: '📊 Overview', count: null },
+                    { id: 'technical', label: '🔬 Technical Details', count: null },
+                    { id: 'recommendations', label: '🛡️ Recommendations', count: detailedResult.detailed.technicalRecommendations.length }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                        activeTab === tab.id
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      {tab.label}
+                      {tab.count && (
+                        <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </nav>
               </div>
 
-              {/* Do Not Track Header */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">Do Not Track Header</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    testResult.browser.doNotTrack 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {getRiskLevel(testResult.browser.doNotTrack)}
-                  </span>
+              {/* Export Options */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-3">📥 Export Report</h3>
+                <div className="flex flex-wrap gap-2">
+                  {['json', 'markdown', 'html', 'csv'].map((format) => (
+                    <button
+                      key={format}
+                      onClick={() => exportReport(format as any)}
+                      className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                    >
+                      Export {format.toUpperCase()}
+                    </button>
+                  ))}
                 </div>
-                <p className="text-gray-700 mb-3">
-                  {testResult.browser.doNotTrack 
-                    ? 'Do Not Track is enabled' 
-                    : 'Do Not Track is disabled'}
-                </p>
-                <p className="text-gray-600 text-sm mb-3">
-                  {testResult.browser.doNotTrack 
-                    ? 'Your browser sends the Do Not Track header, requesting not to be tracked.' 
-                    : 'Your browser does not send the Do Not Track header.'}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Recommendation:</strong> {testResult.browser.doNotTrack 
-                    ? 'Excellent! Keep Do Not Track enabled.' 
-                    : 'Enable Do Not Track in your browser privacy settings.'}
-                </p>
               </div>
 
-              {/* Browser Fingerprinting */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">Browser Fingerprinting</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    testResult.fingerprinting.uniquenessScore < 50 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {testResult.fingerprinting.uniquenessScore < 50 ? 'Good' : 'Privacy Risk'}
-                  </span>
-                </div>
-                <p className="text-gray-700 mb-2">
-                  Browser uniqueness score: {testResult.fingerprinting.uniquenessScore}%
-                </p>
-                <p className="text-gray-600 text-sm mb-3">
-                  Detected browser: {testResult.browser.name}. Your browser has a {
-                    testResult.fingerprinting.uniquenessScore > 80 ? 'highly unique' : 
-                    testResult.fingerprinting.uniquenessScore > 50 ? 'somewhat unique' : 'relatively common'
-                  } fingerprint, making you {
-                    testResult.fingerprinting.uniquenessScore > 80 ? 'easily trackable' : 
-                    testResult.fingerprinting.uniquenessScore > 50 ? 'moderately trackable' : 'harder to track'
-                  }. Screen: {testResult.hardware.screen.width}x{testResult.hardware.screen.height}, 
-                  Cores: {testResult.hardware.cpuCores}, Memory: {testResult.hardware.deviceMemory}GB
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Recommendation:</strong> {testResult.fingerprinting.uniquenessScore > 70 
-                    ? 'Consider using privacy-focused browser settings or extensions.' 
-                    : 'Good! Your fingerprint is relatively common.'}
-                </p>
-              </div>
-
-              {/* Local Storage */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">Local Storage</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    testResult.cookies.localStorageBlocked 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {testResult.cookies.localStorageBlocked ? 'Good' : 'Warning'}
-                  </span>
-                </div>
-                <p className="text-gray-700 mb-3">
-                  {testResult.cookies.localStorageBlocked 
-                    ? 'Local storage is blocked' 
-                    : 'Local storage is available'}
-                </p>
-                <p className="text-gray-600 text-sm mb-3">
-                  {testResult.cookies.localStorageBlocked 
-                    ? 'Local storage is properly blocked, preventing persistent tracking.' 
-                    : 'Local storage can be used to track you across browser sessions.'}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Recommendation:</strong> {testResult.cookies.localStorageBlocked 
-                    ? 'Perfect! Local storage blocking is active.' 
-                    : 'Consider disabling local storage or using private browsing mode.'}
-                </p>
-              </div>
-
-              {/* Canvas Fingerprinting */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">Canvas Fingerprinting</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    testResult.fingerprinting.canvasBlocked 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {getRiskLevel(testResult.fingerprinting.canvasBlocked)}
-                  </span>
-                </div>
-                <p className="text-gray-700 mb-3">
-                  {testResult.fingerprinting.canvasBlocked 
-                    ? 'Canvas fingerprinting is blocked' 
-                    : 'Canvas fingerprinting possible'}
-                </p>
-                <p className="text-gray-600 text-sm mb-3">
-                  {testResult.fingerprinting.canvasBlocked 
-                    ? 'Canvas fingerprinting is properly blocked or randomized.' 
-                    : 'Your browser allows canvas fingerprinting, which creates a unique identifier.'}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Recommendation:</strong> {testResult.fingerprinting.canvasBlocked 
-                    ? 'Excellent! Canvas protection is working.' 
-                    : 'Use a browser extension to block canvas fingerprinting.'}
-                </p>
-              </div>
-
-              {/* WebGL Fingerprinting */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">WebGL Fingerprinting</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    testResult.fingerprinting.webglBlocked 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {getRiskLevel(testResult.fingerprinting.webglBlocked)}
-                  </span>
-                </div>
-                <p className="text-gray-700 mb-3">
-                  {testResult.fingerprinting.webglBlocked 
-                    ? 'WebGL fingerprinting is blocked' 
-                    : 'WebGL fingerprinting possible'}
-                </p>
-                <p className="text-gray-600 text-sm mb-3">
-                  WebGL fingerprinting is {testResult.fingerprinting.webglBlocked ? 'blocked or restricted' : 'available for tracking'}.
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Recommendation:</strong> {testResult.fingerprinting.webglBlocked 
-                    ? 'Great! WebGL fingerprinting protection is active.' 
-                    : 'Consider disabling WebGL in your browser settings.'}
-                </p>
-              </div>
-
-              {/* Font Detection */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">Font Detection</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    testResult.fingerprinting.fontsDetected.length < 10 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {testResult.fingerprinting.fontsDetected.length < 10 ? 'Good' : 'Privacy Risk'}
-                  </span>
-                </div>
-                <p className="text-gray-700 mb-3">
-                  {testResult.fingerprinting.fontsDetected.length} fonts detected
-                </p>
-                <p className="text-gray-600 text-sm mb-3">
-                  {testResult.fingerprinting.fontsDetected.length < 10 
-                    ? 'Font enumeration is limited, providing better privacy.' 
-                    : 'Many fonts are available for fingerprinting, making you more unique.'}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Recommendation:</strong> {testResult.fingerprinting.fontsDetected.length < 10 
-                    ? 'Excellent! Font enumeration is properly limited.' 
-                    : 'Consider using a browser that limits font enumeration.'}
-                </p>
-              </div>
-
-              {/* Plugin Detection */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">Plugin Detection</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    testResult.fingerprinting.pluginsDetected.length < 3 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {testResult.fingerprinting.pluginsDetected.length < 3 ? 'Good' : 'Privacy Risk'}
-                  </span>
-                </div>
-                <p className="text-gray-700 mb-3">
-                  {testResult.fingerprinting.pluginsDetected.length} plugins detected
-                </p>
-                <p className="text-gray-600 text-sm mb-3">
-                  {testResult.fingerprinting.pluginsDetected.length > 0 && (
-                    <>Detected plugins: {testResult.fingerprinting.pluginsDetected.slice(0, 3).join(', ')}
-                    {testResult.fingerprinting.pluginsDetected.length > 3 && '...'}</>
-                  )}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Recommendation:</strong> {testResult.fingerprinting.pluginsDetected.length < 3 
-                    ? 'Good! Plugin enumeration is limited.' 
-                    : 'Consider disabling unnecessary browser plugins.'}
-                </p>
-              </div>
-
-              {/* Browser Fingerprint Analysis */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Browser Fingerprint Analysis</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p><strong>User Agent:</strong> {testResult.browser.userAgent.substring(0, 50)}...</p>
-                    <p><strong>Language:</strong> {testResult.browser.language}</p>
-                    <p><strong>Platform:</strong> {testResult.browser.platform}</p>
-                    <p><strong>Screen:</strong> {testResult.hardware.screen.width}x{testResult.hardware.screen.height} ({testResult.hardware.screen.colorDepth}-bit)</p>
+              {/* Tab Content */}
+              {activeTab === 'overview' && (
+                <div className="space-y-6">
+                  {/* Executive Summary */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Executive Summary</h3>
+                    <div className="prose text-gray-700">
+                      {technicalReport?.summary.majorIssues.length === 0 ? (
+                        <p className="text-green-700">
+                          🎉 Excellent! Your browser configuration provides strong privacy protection with no major issues detected.
+                        </p>
+                      ) : (
+                        <div>
+                          <p className="mb-3">
+                            Your privacy analysis revealed {technicalReport?.summary.majorIssues.length} area(s) for improvement:
+                          </p>
+                          <ul className="list-disc list-inside space-y-1">
+                            {technicalReport?.summary.majorIssues.map((issue, index) => (
+                              <li key={index} className="text-red-700">{issue}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p><strong>Timezone:</strong> {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
-                    <p><strong>CPU Cores:</strong> {testResult.hardware.cpuCores}</p>
-                    <p><strong>Device Memory:</strong> {testResult.hardware.deviceMemory} GB</p>
-                    <p><strong>Do Not Track:</strong> {testResult.browser.doNotTrack ? '1' : 'Not set'}</p>
+
+                  {/* Privacy Test Results Grid */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Third-Party Cookies */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">🍪 Third-Party Cookies</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          detailedResult.userFriendly.cookies.thirdPartyCookiesBlocked 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {detailedResult.userFriendly.cookies.thirdPartyCookiesBlocked ? '✅ BLOCKED' : '❌ ENABLED'}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 mb-3">
+                        {detailedResult.userFriendly.cookies.thirdPartyCookiesBlocked 
+                          ? 'Your browser effectively blocks third-party cookies, preventing cross-site tracking.' 
+                          : 'Third-party cookies are enabled, allowing websites to track you across the internet.'}
+                      </p>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>SameSite=None: {detailedResult.userFriendly.cookies.sameSiteNoneBlocked ? 'Blocked ✅' : 'Allowed ❌'}</p>
+                        <p>SameSite=Lax: {detailedResult.userFriendly.cookies.sameSiteLaxBlocked ? 'Blocked ✅' : 'Allowed ⚠️'}</p>
+                        <p>SameSite=Strict: {detailedResult.userFriendly.cookies.sameSiteStrictBlocked ? 'Blocked ⚠️' : 'Allowed ✅'}</p>
+                      </div>
+                    </div>
+
+                    {/* Canvas Fingerprinting */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">🎭 Canvas Fingerprinting</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          detailedResult.userFriendly.fingerprinting.canvasBlocked 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {detailedResult.userFriendly.fingerprinting.canvasBlocked ? '🛡️ BLOCKED' : '🎯 POSSIBLE'}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 mb-3">
+                        {detailedResult.userFriendly.fingerprinting.canvasBlocked 
+                          ? 'Canvas fingerprinting is blocked or randomized, protecting your identity.' 
+                          : 'Canvas fingerprinting is possible, potentially creating a unique identifier.'}
+                      </p>
+                      <div className="text-sm text-gray-600">
+                        <p>Blocking Method: {detailedResult.detailed.fingerprinting.testDetails.canvas.blockingMethod || 'None detected'}</p>
+                        <p>Randomization: {detailedResult.detailed.fingerprinting.testDetails.canvas.randomizationDetected ? 'Active ✅' : 'None ❌'}</p>
+                      </div>
+                    </div>
+
+                    {/* WebGL Fingerprinting */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">🔮 WebGL Fingerprinting</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          detailedResult.userFriendly.fingerprinting.webglBlocked 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {detailedResult.userFriendly.fingerprinting.webglBlocked ? '🔒 BLOCKED' : '🔓 POSSIBLE'}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 mb-3">
+                        {detailedResult.userFriendly.fingerprinting.webglBlocked 
+                          ? 'WebGL is disabled or blocked, preventing graphics card fingerprinting.' 
+                          : 'WebGL is accessible, exposing detailed graphics hardware information.'}
+                      </p>
+                      <div className="text-sm text-gray-600">
+                        <p>Context Available: {detailedResult.detailed.fingerprinting.testDetails.webgl.contextAvailable ? 'Yes ❌' : 'No ✅'}</p>
+                        <p>Renderer: {detailedResult.detailed.fingerprinting.testDetails.webgl.renderer || 'Hidden ✅'}</p>
+                        <p>Vendor: {detailedResult.detailed.fingerprinting.testDetails.webgl.vendor || 'Hidden ✅'}</p>
+                      </div>
+                    </div>
+
+                    {/* Hardware Fingerprinting */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">🖥️ Hardware Exposure</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          detailedResult.detailed.hardware.fingerprintingRisk === 'low' 
+                            ? 'bg-green-100 text-green-800' 
+                            : detailedResult.detailed.hardware.fingerprintingRisk === 'medium'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {detailedResult.detailed.hardware.fingerprintingRisk.toUpperCase()} RISK
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>CPU Cores:</span>
+                          <span className={detailedResult.detailed.hardware.spoofingDetected.cpuCores ? 'text-green-600' : 'text-red-600'}>
+                            {detailedResult.userFriendly.hardware.cpuCores} {detailedResult.detailed.hardware.spoofingDetected.cpuCores ? '(Spoofed ✅)' : '(Exposed ❌)'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Device Memory:</span>
+                          <span className={detailedResult.detailed.hardware.spoofingDetected.deviceMemory ? 'text-green-600' : 'text-red-600'}>
+                            {detailedResult.userFriendly.hardware.deviceMemory}GB {detailedResult.detailed.hardware.spoofingDetected.deviceMemory ? '(Spoofed ✅)' : '(Exposed ❌)'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Screen Resolution:</span>
+                          <span className={detailedResult.detailed.hardware.spoofingDetected.screenResolution ? 'text-green-600' : 'text-red-600'}>
+                            {detailedResult.userFriendly.hardware.screen.width}×{detailedResult.userFriendly.hardware.screen.height} {detailedResult.detailed.hardware.spoofingDetected.screenResolution ? '(Spoofed ✅)' : '(Exposed ❌)'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Browser Information */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">🌐 Browser Information</h3>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Basic Information</h4>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="text-gray-600">Browser:</span> {detailedResult.detailed.browser.name} {detailedResult.detailed.browser.version}</p>
+                          <p><span className="text-gray-600">Engine:</span> {detailedResult.detailed.browser.browserEngine}</p>
+                          <p><span className="text-gray-600">Platform:</span> {detailedResult.detailed.browser.platform}</p>
+                          <p><span className="text-gray-600">Language:</span> {detailedResult.detailed.browser.language}</p>
+                          <p><span className="text-gray-600">Do Not Track:</span> 
+                            <span className={detailedResult.userFriendly.browser.doNotTrack ? 'text-green-600' : 'text-red-600'}>
+                              {detailedResult.userFriendly.browser.doNotTrack ? ' Enabled ✅' : ' Disabled ❌'}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Font & Plugin Detection</h4>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="text-gray-600">Fonts Detected:</span> {detailedResult.userFriendly.fingerprinting.fontsDetected.length}</p>
+                          <p><span className="text-gray-600">Plugins Detected:</span> {detailedResult.userFriendly.fingerprinting.pluginsDetected.length}</p>
+                          <p><span className="text-gray-600">Font Spoofing:</span> 
+                            <span className={detailedResult.detailed.fingerprinting.testDetails.fonts.spoofingDetected ? 'text-green-600' : 'text-red-600'}>
+                              {detailedResult.detailed.fingerprinting.testDetails.fonts.spoofingDetected ? ' Detected ✅' : ' None ❌'}
+                            </span>
+                          </p>
+                          <p><span className="text-gray-600">Uniqueness Score:</span> {detailedResult.userFriendly.fingerprinting.uniquenessScore}%</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Recommendations */}
-              <div className="bg-blue-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-blue-900 mb-4">Privacy Enhancement Recommendations</h3>
-                
-                {testResult.recommendations.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-blue-800 mb-2">Personalized Recommendations:</h4>
-                    <ul className="space-y-2">
-                      {testResult.recommendations.map((rec, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="text-blue-600 mr-2">•</span>
-                          <span className="text-blue-800">{rec}</span>
-                        </li>
-                      ))}
-                    </ul>
+              {activeTab === 'technical' && detailedResult && (
+                <div className="space-y-6">
+                  {/* Score Breakdown */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Privacy Score Breakdown</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">Component</th>
+                            <th className="text-right py-2">Score</th>
+                            <th className="text-right py-2">Max</th>
+                            <th className="text-left py-2">Reason</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-sm">
+                          <tr className="border-b">
+                            <td className="py-2">Browser</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.browser.score}</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.browser.max}</td>
+                            <td className="py-2 text-gray-600">{detailedResult.detailed.scoreBreakdown.components.browser.reason}</td>
+                          </tr>
+                          <tr className="border-b">
+                            <td className="py-2">Cookies</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.cookies.score}</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.cookies.max}</td>
+                            <td className="py-2 text-gray-600">{detailedResult.detailed.scoreBreakdown.components.cookies.reason}</td>
+                          </tr>
+                          <tr className="border-b">
+                            <td className="py-2">Fingerprinting</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.score}</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.max}</td>
+                            <td className="py-2 text-gray-600">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.reason}</td>
+                          </tr>
+                          <tr className="border-b">
+                            <td className="py-2">Hardware</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.hardware.score}</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.components.hardware.max}</td>
+                            <td className="py-2 text-gray-600">{detailedResult.detailed.scoreBreakdown.components.hardware.reason}</td>
+                          </tr>
+                          <tr className="border-b font-semibold">
+                            <td className="py-2">Total</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.total}</td>
+                            <td className="text-right py-2">{detailedResult.detailed.scoreBreakdown.maxPossible}</td>
+                            <td className="py-2">{detailedResult.detailed.scoreBreakdown.percentage}%</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                )}
 
-                <div className="grid md:grid-cols-3 gap-6 text-sm">
-                  <div>
-                    <h4 className="font-semibold text-blue-800 mb-3">Browser Settings:</h4>
-                    <ul className="space-y-2 text-blue-700">
-                      <li>Enable "Do Not Track" in privacy settings</li>
-                      <li>Block third-party cookies</li>
-                      <li>Disable location services</li>
-                      <li>Clear cookies and site data regularly</li>
-                      <li>Use private/incognito browsing mode</li>
-                    </ul>
+                  {/* Advanced Fingerprinting Data */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">🔬 Advanced Fingerprinting Analysis</h3>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Browser Capabilities</h4>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="text-gray-600">WebGL:</span> {detailedResult.metadata.browserCapabilities.webgl ? 'Supported' : 'Disabled'}</p>
+                          <p><span className="text-gray-600">WebGL2:</span> {detailedResult.metadata.browserCapabilities.webgl2 ? 'Supported' : 'Not Available'}</p>
+                          <p><span className="text-gray-600">Service Workers:</span> {detailedResult.metadata.browserCapabilities.serviceWorkers ? 'Supported' : 'Not Available'}</p>
+                          <p><span className="text-gray-600">WebAssembly:</span> {detailedResult.metadata.browserCapabilities.webAssembly ? 'Supported' : 'Not Available'}</p>
+                          <p><span className="text-gray-600">WebRTC:</span> {detailedResult.metadata.browserCapabilities.webRTC ? 'Supported' : 'Not Available'}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">System Information</h4>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="text-gray-600">Timezone:</span> {detailedResult.detailed.fingerprinting.advancedFingerprinting.timezone}</p>
+                          <p><span className="text-gray-600">Languages:</span> {detailedResult.detailed.fingerprinting.advancedFingerprinting.language.join(', ')}</p>
+                          <p><span className="text-gray-600">Touch Support:</span> {detailedResult.detailed.fingerprinting.advancedFingerprinting.touchSupport ? 'Yes' : 'No'}</p>
+                          <p><span className="text-gray-600">Color Gamut:</span> {detailedResult.detailed.fingerprinting.advancedFingerprinting.colorGamut || 'Unknown'}</p>
+                          <p><span className="text-gray-600">HDR Support:</span> {detailedResult.detailed.fingerprinting.advancedFingerprinting.hdr ? 'Yes' : 'No'}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-blue-800 mb-3">Recommended Browser Extensions:</h4>
-                    <ul className="space-y-2 text-blue-700">
-                      <li>uBlock Origin - Blocks ads and trackers</li>
-                      <li>Privacy Badger - Prevents tracking</li>
-                      <li>ClearURLs - Removes tracking parameters</li>
-                      <li>Decentraleyes - Protects against tracking</li>
-                      <li>CanvasBlocker - Prevents canvas fingerprinting</li>
-                    </ul>
+
+                  {/* Privacy Tool Signatures */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">🛡️ Privacy Tool Signatures</h3>
+                    {detailedResult.detailed.fingerprinting.privacyToolSignatures.length > 0 ? (
+                      <ul className="space-y-2">
+                        {detailedResult.detailed.fingerprinting.privacyToolSignatures.map((signature, index) => (
+                          <li key={index} className="flex items-center text-sm">
+                            <span className="text-green-500 mr-2">✓</span>
+                            <span className="text-gray-700">{signature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-600">No privacy tool signatures detected</p>
+                    )}
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-blue-800 mb-3">Privacy-Focused Browsers:</h4>
-                    <ul className="space-y-2 text-blue-700">
-                      <li>Firefox</li>
-                      <li>Brave Browser</li>
-                      <li>Tor Browser</li>
-                    </ul>
+
+                  {/* Raw Data */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">🔬 Raw Technical Data</h3>
+                      <button
+                        onClick={() => setShowRawData(!showRawData)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        {showRawData ? 'Hide' : 'Show'} Raw Data
+                      </button>
+                    </div>
+                    
+                    {showRawData && (
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">Canvas Fingerprint</h4>
+                          <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+                            {detailedResult.rawData.canvasFingerprint || 'Not available'}
+                          </pre>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">WebGL Fingerprint</h4>
+                          <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+                            {detailedResult.rawData.webglFingerprint || 'Not available'}
+                          </pre>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">Navigator Object</h4>
+                          <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+                            {JSON.stringify(detailedResult.rawData.navigatorObject, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
+              )}
+
+              {activeTab === 'recommendations' && detailedResult && (
+                <div className="space-y-6">
+                  {/* Recommendations by Priority */}
+                  {userFriendlyReport?.visualElements.recommendations.map((category, index) => (
+                    <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">{category.category}</h3>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(category.priority)}`}>
+                          {category.priority.toUpperCase()} PRIORITY
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {detailedResult.detailed.technicalRecommendations
+                          .filter(rec => {
+                            if (category.priority === 'high') return rec.category === 'critical';
+                            if (category.priority === 'medium') return rec.category === 'important';
+                            return rec.category === 'suggested' || rec.category === 'informational';
+                          })
+                          .map((rec, recIndex) => (
+                            <div key={recIndex} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-3">
+                                <h4 className="font-semibold text-gray-900">{rec.title}</h4>
+                                <span className="text-sm text-green-600 font-medium">+{rec.impact.privacyGain}% privacy</span>
+                              </div>
+                              
+                              <p className="text-gray-700 mb-3">{rec.description}</p>
+                              
+                              <div className="text-sm text-gray-600 mb-3">
+                                <strong>Technical Details:</strong> {rec.technicalDetails}
+                              </div>
+                              
+                              {/* Implementation Steps */}
+                              {rec.implementation.browserSettings && (
+                                <div className="mb-3">
+                                  <strong className="text-sm text-gray-900">Browser Settings:</strong>
+                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                    {rec.implementation.browserSettings.map((setting, settingIndex) => (
+                                      <li key={settingIndex}>{setting}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {rec.implementation.extensions && (
+                                <div className="mb-3">
+                                  <strong className="text-sm text-gray-900">Recommended Extensions:</strong>
+                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                    {rec.implementation.extensions.map((ext, extIndex) => (
+                                      <li key={extIndex}>{ext}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {rec.implementation.advanced && (
+                                <div className="mb-3">
+                                  <strong className="text-sm text-gray-900">Advanced Configuration:</strong>
+                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                    {rec.implementation.advanced.map((adv, advIndex) => (
+                                      <li key={advIndex}>{adv}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {/* Impact Analysis */}
+                              <div className="flex space-x-4 text-xs">
+                                <span className="bg-gray-100 px-2 py-1 rounded">
+                                  Usability Impact: {rec.impact.usabilityImpact}
+                                </span>
+                                <span className="bg-gray-100 px-2 py-1 rounded">
+                                  Breakage Risk: {rec.impact.breakageRisk}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
