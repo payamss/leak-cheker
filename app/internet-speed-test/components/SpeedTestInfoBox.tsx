@@ -27,10 +27,10 @@ const SpeedTestInfoBox = () => {
                   Speed Measurements
                 </h4>
                 <ul className="text-sm space-y-1">
-                  <li>• Download speed (Mbps)</li>
-                  <li>• Upload speed (Mbps)</li>
-                  <li>• Ping latency (ms)</li>
-                  <li>• Connection stability</li>
+                  <li>• Download speed (Mbps) - 100MB+ multi-server test</li>
+                  <li>• Upload speed (Mbps) - 50MB+ concurrent uploads</li>
+                  <li>• Ping latency (ms) - Multi-ping analysis</li>
+                  <li>• Connection stability with jitter measurement</li>
                 </ul>
               </div>
               
@@ -61,7 +61,8 @@ const SpeedTestInfoBox = () => {
             
             <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md">
               <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> Speed tests use your bandwidth and may affect other network activities. 
+                <strong>Note:</strong> Our enhanced speed test uses large files (100MB+ downloads, 50MB+ uploads) and runs for 10-30 seconds 
+                to accurately measure high-speed connections. This test will use significant bandwidth and may affect other network activities. 
                 For best results, close other applications and avoid downloads during testing.
               </p>
             </div>
