@@ -14,6 +14,7 @@ export default function Header() {
     { id: 'dns-leaks', label: 'DNS Leaks', href: '/dns-leaks' },
     { id: 'webrtc-leaks', label: 'WebRTC Leaks', href: '/webrtc-leaks' },
     { id: 'geo-location', label: 'Geolocation', href: '/geo-location' },
+    { id: 'dark-web-exposure', label: 'Dark Web Exposure', href: '/dark-web-exposure' },
   ];
 
   return (

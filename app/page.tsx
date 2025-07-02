@@ -11,6 +11,7 @@ export default function Home() {
         <li>DNS Leaks</li>
         <li>WebRTC Leaks</li>
         <li>Geolocation Leaks</li>
+        <li>Dark Web Exposure</li>
       </ul>
     </div>
   );
