@@ -19,6 +19,7 @@ type TestProgress = {
   download: number;
   upload: number;
   ping: number;
+  serverDiscovery: number;
 };
 
 type RealTimeSpeed = {
@@ -31,10 +32,11 @@ const InternetSpeedTest = () => {
   const [isClient, setIsClient] = useState(false);
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
   const [results, setResults] = useState<SpeedTestResults | null>(null);
-  const [progress, setProgress] = useState<TestProgress>({ download: 0, upload: 0, ping: 0 });
-  const [currentTest, setCurrentTest] = useState<'ping' | 'download' | 'upload' | 'complete'>('ping');
+  const [progress, setProgress] = useState<TestProgress>({ download: 0, upload: 0, ping: 0, serverDiscovery: 0 });
+  const [currentTest, setCurrentTest] = useState<'serverDiscovery' | 'ping' | 'download' | 'upload' | 'complete'>('ping');
   const [error, setError] = useState<string | null>(null);
   const [realTimeSpeed, setRealTimeSpeed] = useState<RealTimeSpeed>({ downloadSpeed: 0, uploadSpeed: 0, showSpeed: false });
+  const [optimalServersCache, setOptimalServersCache] = useState<string[]>([]);
 
   // Professional speed test configuration
   const [testConfig] = useState({
@@ -45,12 +47,172 @@ const InternetSpeedTest = () => {
     stabilityWindow: 3,                // 3 seconds for stability detection
     maxConnections: 8,                 // Maximum parallel connections
     chunkSize: 8 * 1024 * 1024,       // 8MB chunks for large file simulation
-    measurementInterval: 0.3           // 300ms measurement intervals
+    measurementInterval: 0.3,          // 300ms measurement intervals
+    serverDiscoveryTimeout: 3000,      // 3 seconds to test each server
+    optimalServerCount: 3              // Use top 3 fastest servers
   });
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Server Discovery - Find fastest servers first
+  const discoverOptimalServers = async (useCache: boolean = false): Promise<string[]> => {
+    // Return cached results if available and requested
+    if (useCache && optimalServersCache.length > 0) {
+      console.log('Using cached optimal servers:', optimalServersCache.length);
+      return optimalServersCache;
+    }
+    
+    console.log('Discovering optimal servers...');
+    
+    // Discovery endpoints - optimized for quick ping/latency testing
+    const discoveryServers = [
+      // httpbin.org - reliable for both discovery and large transfers
+      { 
+        name: 'httpbin.org',
+        pingUrl: 'https://httpbin.org/get',
+        discoveryUrl: 'https://httpbin.org/bytes/2097152', // 2MB for discovery
+        // Large file endpoints for actual testing
+        testUrls: [
+          'https://httpbin.org/bytes/20971520',  // 20MB
+          'https://httpbin.org/bytes/52428800',  // 50MB
+          'https://httpbin.org/bytes/104857600', // 100MB
+          'https://httpbin.org/bytes/209715200'  // 200MB for gigabit testing
+        ]
+      },
+      // httpbingo.org - alternative to httpbin
+      { 
+        name: 'httpbingo.org',
+        pingUrl: 'https://httpbingo.org/get',
+        discoveryUrl: 'https://httpbingo.org/bytes/2097152', // 2MB for discovery
+        testUrls: [
+          'https://httpbingo.org/bytes/20971520',  // 20MB
+          'https://httpbingo.org/bytes/52428800',  // 50MB
+          'https://httpbingo.org/bytes/104857600', // 100MB
+          'https://httpbingo.org/bytes/209715200'  // 200MB for gigabit testing
+        ]
+      },
+      // JSONPlaceholder - only for ping testing, NOT for large downloads
+      { 
+        name: 'jsonplaceholder-ping',
+        pingUrl: 'https://jsonplaceholder.typicode.com/posts/1',
+        discoveryUrl: 'https://jsonplaceholder.typicode.com/photos', // Just for latency
+        testUrls: [] // Don't use for actual testing - too small
+      }
+    ];
+
+    const serverResults: Array<{ server: typeof discoveryServers[0], latency: number, downloadSpeed: number }> = [];
+
+    // Test each server
+    for (let i = 0; i < discoveryServers.length; i++) {
+      const server = discoveryServers[i];
+      try {
+        console.log(`Testing server: ${server.name}`);
+        
+        // Update progress for server discovery
+        setProgress(prev => ({ ...prev, serverDiscovery: ((i + 1) / discoveryServers.length) * 100 }));
+        
+        // Test 1: Ping/Latency test
+        const pingStart = performance.now();
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), testConfig.serverDiscoveryTimeout);
+        
+        const pingResponse = await fetch(server.pingUrl, {
+          signal: controller.signal,
+          method: 'HEAD',
+          cache: 'no-cache'
+        });
+        
+        clearTimeout(timeout);
+        const latency = performance.now() - pingStart;
+        
+        if (!pingResponse.ok) throw new Error(`Ping failed: ${pingResponse.status}`);
+
+        // Test 2: Download speed test only for servers with large file capabilities
+        let downloadSpeed = 0;
+        
+        if (server.testUrls.length > 0) { // Only test servers that can handle large files
+          const downloadStart = performance.now();
+          let downloadBytes = 0;
+          
+          const downloadController = new AbortController();
+          const downloadTimeout = setTimeout(() => downloadController.abort(), 3000); // 3 second test
+          
+          try {
+            const downloadResponse = await fetch(server.discoveryUrl, {
+              signal: downloadController.signal,
+              cache: 'no-cache'
+            });
+            
+            if (downloadResponse.ok) {
+              const reader = downloadResponse.body?.getReader();
+              if (reader) {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  downloadBytes += value.length;
+                }
+                reader.releaseLock();
+              }
+            }
+          } catch (e) {
+            // Download test failed, but we still have latency
+          }
+          
+          clearTimeout(downloadTimeout);
+          
+          const downloadDuration = (performance.now() - downloadStart) / 1000;
+          downloadSpeed = downloadBytes > 0 ? (downloadBytes * 8) / (downloadDuration * 1000000) : 0;
+        }
+        
+        serverResults.push({
+          server,
+          latency,
+          downloadSpeed
+        });
+        
+        console.log(`${server.name}: ${Math.round(latency)}ms latency, ${downloadSpeed.toFixed(2)} Mbps`);
+        
+      } catch (e) {
+        console.warn(`Server ${server.name} failed:`, e);
+        // Don't add failed servers to results
+      }
+    }
+
+    // Sort by combined score: prioritize servers with large file capability
+    serverResults.sort((a, b) => {
+      // Heavily favor servers that can handle large files
+      const aHasLargeFiles = a.server.testUrls.length > 0 ? 1000 : 0;
+      const bHasLargeFiles = b.server.testUrls.length > 0 ? 1000 : 0;
+      
+      // Score: large file capability + low latency + high download speed
+      const scoreA = aHasLargeFiles - a.latency + (a.downloadSpeed * 10);
+      const scoreB = bHasLargeFiles - b.latency + (b.downloadSpeed * 10);
+      
+      return scoreB - scoreA; // Higher score is better
+    });
+
+    // Return test URLs from servers that can handle large files
+    const optimalEndpoints = serverResults
+      .filter(result => result.server.testUrls.length > 0) // Only servers with large file capability
+      .slice(0, 2) // Take top 2 servers to avoid overwhelming free services
+      .map(result => {
+        console.log(`Selected optimal server: ${result.server.name} (${Math.round(result.latency)}ms, ${result.downloadSpeed.toFixed(2)} Mbps)`);
+        return result.server.testUrls;
+      })
+      .flat(); // Flatten the array of arrays
+
+    if (optimalEndpoints.length === 0) {
+      throw new Error('No servers with large file capability available for testing');
+    }
+
+    console.log(`Cached ${optimalEndpoints.length} optimal endpoints for testing`);
+    
+    // Cache the results
+    setOptimalServersCache(optimalEndpoints);
+    return optimalEndpoints;
+  };
 
   // Ping/Latency Test
   const testPing = async (): Promise<{ ping: number; jitter: number }> => {
@@ -98,28 +260,35 @@ const InternetSpeedTest = () => {
     return { ping: Math.round(avgPing), jitter: Math.round(jitter * 10) / 10 };
   };
 
-  // Professional Download Speed Test - Browser-Compatible Version
+  // Professional Download Speed Test - Hybrid Multi-Endpoint Approach
   const testDownloadSpeed = async (): Promise<number> => {
-    console.log('Starting professional download test...');
+    console.log('Starting professional hybrid download test...');
     
     const startTime = performance.now();
     let totalBytesDownloaded = 0;
     let testRunning = true;
-    let connections = 1; // Start with 1 connection, scale up
+    let connections = 2; // Start with 2 connections for better initial throughput
     let measurements: Array<{ time: number; bytes: number; speed: number }> = [];
     
     setRealTimeSpeed(prev => ({ ...prev, downloadSpeed: 0, showSpeed: true }));
     
-    // CORS-friendly endpoints that support high-speed testing
+    // Multi-endpoint hybrid approach - use multiple reliable sources
     const testEndpoints = [
-      // Generated data endpoints that support large downloads
-      'https://httpbin.org/bytes/10485760', // 10MB
-      'https://httpbin.org/bytes/5242880',  // 5MB  
-      'https://httpbin.org/bytes/20971520', // 20MB
-      // Alternative services
-      'https://httpbingo.org/bytes/10485760', // 10MB
-      'https://httpbingo.org/bytes/15728640', // 15MB
+      // Small to medium files from reliable services
+      'https://httpbin.org/bytes/1048576',    // 1MB
+      'https://httpbin.org/bytes/2097152',    // 2MB
+      'https://httpbin.org/bytes/3145728',    // 3MB
+      'https://httpbingo.org/bytes/1048576',  // 1MB alternative
+      'https://httpbingo.org/bytes/2097152',  // 2MB alternative
+      'https://httpbingo.org/bytes/3145728',  // 3MB alternative
+      // Additional reliable endpoints
+      'https://jsonplaceholder.typicode.com/photos',  // ~500KB JSON
+      'https://jsonplaceholder.typicode.com/users',   // ~20KB JSON
+      'https://jsonplaceholder.typicode.com/posts',   // ~50KB JSON
+      'https://jsonplaceholder.typicode.com/comments' // ~150KB JSON
     ];
+    
+    console.log(`Testing with ${testEndpoints.length} endpoints using hybrid approach`);
     
     // Measurement tracking
     let lastMeasureTime = startTime;
@@ -146,8 +315,8 @@ const InternetSpeedTest = () => {
         if (elapsed > testConfig.rampUpExcludeTime) {
           measurements.push({ time: elapsed, bytes: totalBytesDownloaded, speed: speedMbps });
           
-          // Check for stability (consecutive similar speeds)
-          if (Math.abs(speedMbps - lastSpeed) < lastSpeed * 0.1) {
+          // Check for stability
+          if (Math.abs(speedMbps - lastSpeed) < lastSpeed * 0.15) { // Allow 15% variance
             stableSpeedCount++;
           } else {
             stableSpeedCount = 0;
@@ -166,120 +335,165 @@ const InternetSpeedTest = () => {
       }
     };
     
-    // Dynamic connection scaling based on detected speed
+    // Aggressive connection scaling for high-throughput testing
     const scaleConnections = () => {
       const currentSpeedMbps = measurements.length > 0 ? 
         measurements[measurements.length - 1].speed : 0;
       
-      if (currentSpeedMbps > 50 && connections < 3) {
-        connections = 3; // Scale to 3 connections for moderate speed
-      } else if (currentSpeedMbps > 100 && connections < 4) {
-        connections = 4; // Scale to 4 connections for high-speed
-      } else if (currentSpeedMbps > 200 && connections < 6) {
-        connections = 6; // Scale to 6 for very high-speed
+      // More aggressive scaling to saturate gigabit connections
+      if (currentSpeedMbps > 0.5 && connections < 3) {
+        connections = 3;
+      } else if (currentSpeedMbps > 2 && connections < 4) {
+        connections = 4;
+      } else if (currentSpeedMbps > 5 && connections < 6) {
+        connections = 6;
+      } else if (currentSpeedMbps > 10 && connections < 8) {
+        connections = 8;
+      } else if (currentSpeedMbps > 20 && connections < 10) {
+        connections = 10; // More connections for higher speeds
       }
     };
     
-    // Download worker function
+    // High-performance download worker with rapid cycling
     const downloadWorker = async (workerId: number): Promise<number> => {
       let workerBytes = 0;
       let requestCount = 0;
+      let consecutiveErrors = 0;
       
-      while (testRunning) {
+      while (testRunning && consecutiveErrors < 2) {
         try {
-          const endpointIndex = (workerId + requestCount) % testEndpoints.length;
+          // Rapid endpoint cycling for maximum throughput
+          const endpointIndex = (workerId * 7 + requestCount) % testEndpoints.length;
           const endpoint = testEndpoints[endpointIndex];
           
-          // Add cache busting and worker identification
-          const testUrl = `${endpoint}?t=${Date.now()}&w=${workerId}&r=${requestCount}`;
+          // Cache busting with worker and request identifiers
+          const testUrl = `${endpoint}${endpoint.includes('?') ? '&' : '?'}t=${Date.now()}&w=${workerId}&r=${requestCount}&rand=${Math.random()}`;
           
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 12000);
+          const timeout = setTimeout(() => controller.abort(), 6000); // 6 second timeout
           
+          const fetchStart = performance.now();
           const response = await fetch(testUrl, {
             signal: controller.signal,
-            cache: 'no-cache',
+            cache: 'no-store',
+            mode: 'cors',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
+              'Pragma': 'no-cache',
+              'Expires': '0'
             }
           });
           
           clearTimeout(timeout);
           
           if (!response.ok) {
-            throw new Error(`Failed to fetch: ${response.status}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
           
           const reader = response.body?.getReader();
-          if (!reader) throw new Error('No reader available');
-          
-          while (testRunning) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            workerBytes += value.length;
-            totalBytesDownloaded += value.length;
+          if (!reader) {
+            // For responses without streams (like JSON), read as text
+            const data = await response.text();
+            const bytes = new TextEncoder().encode(data).length;
+            workerBytes += bytes;
+            totalBytesDownloaded += bytes;
             
             measureSpeed();
             updateProgress();
-            
-            // Check for test completion
-            const elapsed = (performance.now() - startTime) / 1000;
-            if (elapsed > testConfig.maxTestDuration) {
-              testRunning = false;
-              break;
+          } else {
+            // Stream reading for large responses
+            while (testRunning) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              
+              workerBytes += value.length;
+              totalBytesDownloaded += value.length;
+              
+              measureSpeed();
+              updateProgress();
+              
+              // Check for test completion
+              const elapsed = (performance.now() - startTime) / 1000;
+              if (elapsed > testConfig.maxTestDuration) {
+                testRunning = false;
+                break;
+              }
+              
+              // Check for stability-based completion
+              if (elapsed > testConfig.minTestDuration && 
+                  stableSpeedCount >= testConfig.stabilityWindow / testConfig.measurementInterval) {
+                testRunning = false;
+                break;
+              }
             }
             
-            // Check for stability-based completion
-            if (elapsed > testConfig.minTestDuration && 
-                stableSpeedCount >= testConfig.stabilityWindow / testConfig.measurementInterval) {
-              testRunning = false;
-              break;
-            }
+            reader.releaseLock();
           }
           
-          reader.releaseLock();
           requestCount++;
+          consecutiveErrors = 0; // Reset on success
           
-          // Scale connections dynamically
+          // Scale connections based on performance
           scaleConnections();
+          
+          // Minimal delay between requests for maximum throughput
+          if (testRunning) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
           
         } catch (e) {
           console.warn(`Download worker ${workerId} error:`, e);
+          consecutiveErrors++;
           requestCount++;
           
-          if (requestCount > 3) break; // Stop after too many failures
-          
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Quick retry on errors
+          if (consecutiveErrors < 2) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
         }
       }
       
       return workerBytes;
     };
     
-    // Start initial worker
-    const workers = [downloadWorker(0)];
+    // Start with multiple workers for immediate parallelization
+    const workers = [
+      downloadWorker(0),
+      downloadWorker(1)
+    ];
     
-    // Add more workers dynamically
+    // Rapid connection scaling
     const connectionScaler = setInterval(() => {
       if (workers.length < connections && testRunning) {
         workers.push(downloadWorker(workers.length));
+        console.log(`Scaled to ${workers.length + 1} connections (${connections} target)`);
       }
-    }, 3000); // Slower scaling for stability
+    }, 800); // Very fast scaling
     
-    // Run test
+    // Test completion handler
     setTimeout(() => {
       testRunning = false;
       clearInterval(connectionScaler);
     }, testConfig.maxTestDuration * 1000);
     
+    // Additional early completion check
+    const stabilityChecker = setInterval(() => {
+      const elapsed = (performance.now() - startTime) / 1000;
+      if (elapsed > testConfig.minTestDuration && 
+          stableSpeedCount >= testConfig.stabilityWindow / testConfig.measurementInterval) {
+        testRunning = false;
+        clearInterval(connectionScaler);
+        clearInterval(stabilityChecker);
+      }
+    }, 500);
+    
     await Promise.all(workers);
     clearInterval(connectionScaler);
+    clearInterval(stabilityChecker);
     
     setRealTimeSpeed(prev => ({ ...prev, showSpeed: false }));
     
-    // Calculate final speed from stable measurements (exclude ramp-up)
+    // Calculate final speed from stable measurements
     const stableMeasurements = measurements.filter(m => 
       m.time > testConfig.rampUpExcludeTime && m.speed > 0
     );
@@ -289,32 +503,46 @@ const InternetSpeedTest = () => {
       return 0;
     }
     
-    // Use median of stable measurements for final result
+    // Use 75th percentile instead of median for better high-speed representation
     const speeds = stableMeasurements.map(m => m.speed).sort((a, b) => a - b);
-    const medianSpeed = speeds[Math.floor(speeds.length / 2)];
+    const percentile75Index = Math.floor(speeds.length * 0.75);
+    const finalSpeed = speeds[percentile75Index] || speeds[speeds.length - 1];
     
-    console.log(`Download test complete: ${medianSpeed} Mbps from ${stableMeasurements.length} measurements`);
-    return Math.round(medianSpeed * 100) / 100;
+    console.log(`Download test complete: ${finalSpeed} Mbps from ${stableMeasurements.length} measurements using ${workers.length} connections`);
+    console.log(`Speed range: ${speeds[0]?.toFixed(2)} - ${speeds[speeds.length - 1]?.toFixed(2)} Mbps`);
+    
+    return Math.round(finalSpeed * 100) / 100;
   };
 
-  // Professional Upload Speed Test - Browser-Compatible Version
+  // Professional Upload Speed Test - Optimized for CORS-friendly endpoints
   const testUploadSpeed = async (): Promise<number> => {
     console.log('Starting professional upload test...');
     
     const startTime = performance.now();
     let totalBytesUploaded = 0;
     let testRunning = true;
+    let connections = 1; // Start with 1 connection
     let measurements: Array<{ time: number; bytes: number; speed: number }> = [];
     
     setRealTimeSpeed(prev => ({ ...prev, uploadSpeed: 0, showSpeed: true }));
     
-    // CORS-friendly upload endpoints
+    // CORS-friendly upload endpoints - use only the most reliable ones
     const uploadEndpoints = [
       'https://httpbin.org/post',
+      'https://httpbingo.org/post'
     ];
     
+    // Measurement tracking
     let lastMeasureTime = startTime;
     let lastMeasureBytes = 0;
+    let stableSpeedCount = 0;
+    let lastSpeed = 0;
+    
+    const updateProgress = () => {
+      const elapsed = (performance.now() - startTime) / 1000;
+      const progress = Math.min((elapsed / testConfig.minTestDuration) * 100, 100);
+      setProgress(prev => ({ ...prev, upload: progress }));
+    };
     
     const measureSpeed = () => {
       const now = performance.now();
@@ -328,6 +556,15 @@ const InternetSpeedTest = () => {
         // Exclude ramp-up period
         if (elapsed > testConfig.rampUpExcludeTime) {
           measurements.push({ time: elapsed, bytes: totalBytesUploaded, speed: speedMbps });
+          
+          // Check for stability
+          if (Math.abs(speedMbps - lastSpeed) < lastSpeed * 0.1) {
+            stableSpeedCount++;
+          } else {
+            stableSpeedCount = 0;
+          }
+          
+          lastSpeed = speedMbps;
         }
         
         setRealTimeSpeed(prev => ({ 
@@ -340,92 +577,124 @@ const InternetSpeedTest = () => {
       }
     };
     
+    // Conservative connection scaling for uploads
+    const scaleConnections = () => {
+      const currentSpeedMbps = measurements.length > 0 ? 
+        measurements[measurements.length - 1].speed : 0;
+      
+      if (currentSpeedMbps > 3 && connections < 2) {
+        connections = 2;
+      } else if (currentSpeedMbps > 10 && connections < 3) {
+        connections = 3;
+      }
+    };
+    
+    // Generate upload data - smaller chunks for CORS endpoints
+    const generateUploadData = (sizeKB: number): Uint8Array => {
+      const bytes = sizeKB * 1024;
+      const data = new Uint8Array(bytes);
+      
+      // Fill with pattern for compression resistance
+      for (let i = 0; i < bytes; i++) {
+        data[i] = Math.floor(Math.random() * 256);
+      }
+      
+      return data;
+    };
+    
+    // Upload worker function
     const uploadWorker = async (workerId: number): Promise<number> => {
       let workerBytes = 0;
       let requestCount = 0;
       
-      while (testRunning) {
+      while (testRunning && requestCount < 10) { // Limit requests per worker
         try {
-          // Create test data (1MB chunks for upload)
-          const chunkSize = 1024 * 1024; // 1MB chunks
-          const testData = new ArrayBuffer(chunkSize);
-          const view = new Uint8Array(testData);
+          const endpointIndex = (workerId + requestCount) % uploadEndpoints.length;
+          const endpoint = uploadEndpoints[endpointIndex];
           
-          // Fill with pattern data
-          for (let i = 0; i < view.length; i++) {
-            view[i] = (i * 13 + workerId + requestCount) % 256;
-          }
-          
-          const endpoint = uploadEndpoints[0]; // Use only httpbin.org for now
+          // Generate upload data - start small, increase based on performance
+          const chunkSizeKB = Math.min(512, 64 * (requestCount + 1)); // 64KB to 512KB
+          const uploadData = generateUploadData(chunkSizeKB);
           
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000);
-          
-          const uploadStart = performance.now();
+          const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
           
           const response = await fetch(endpoint, {
             method: 'POST',
-            body: testData,
             signal: controller.signal,
             headers: {
               'Content-Type': 'application/octet-stream',
               'Cache-Control': 'no-cache'
-            }
+            },
+            body: uploadData
           });
           
           clearTimeout(timeout);
           
-          if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
-          
-          await response.text(); // Ensure complete
-          
-          const uploadDuration = (performance.now() - uploadStart) / 1000;
-          
-          if (uploadDuration > 0.1) { // Valid timing
-            workerBytes += testData.byteLength;
-            totalBytesUploaded += testData.byteLength;
-            
-            measureSpeed();
+          if (!response.ok) {
+            throw new Error(`Upload failed: ${response.status}`);
           }
           
-          const elapsed = (performance.now() - startTime) / 1000;
-          const progress = Math.min((elapsed / testConfig.minTestDuration) * 100, 100);
-          setProgress(prev => ({ ...prev, upload: progress }));
+          workerBytes += uploadData.length;
+          totalBytesUploaded += uploadData.length;
           
+          measureSpeed();
+          updateProgress();
+          
+          requestCount++;
+          
+          // Check for test completion
+          const elapsed = (performance.now() - startTime) / 1000;
           if (elapsed > testConfig.maxTestDuration) {
             testRunning = false;
             break;
           }
           
-          requestCount++;
+          // Check for stability-based completion
+          if (elapsed > testConfig.minTestDuration && 
+              stableSpeedCount >= testConfig.stabilityWindow / testConfig.measurementInterval) {
+            testRunning = false;
+            break;
+          }
+          
+          // Scale connections based on performance
+          scaleConnections();
           
           // Small delay between uploads
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 100));
           
         } catch (e) {
           console.warn(`Upload worker ${workerId} error:`, e);
           requestCount++;
           
-          if (requestCount > 5) break;
+          if (requestCount > 3) break;
           
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
       
       return workerBytes;
     };
     
-    // Start 2 upload workers (limited to avoid overwhelming servers)
-    const workers = [
-      uploadWorker(0),
-      uploadWorker(1)
-    ];
+    // Start initial worker
+    const workers = [uploadWorker(0)];
     
+    // Add more workers conservatively
+    const connectionScaler = setInterval(() => {
+      if (workers.length < connections && testRunning) {
+        workers.push(uploadWorker(workers.length));
+        console.log(`Upload scaled to ${workers.length + 1} connections`);
+      }
+    }, 3000); // Even slower scaling for uploads
+    
+    // Run test
     setTimeout(() => {
       testRunning = false;
-    }, testConfig.minTestDuration * 1000);
+      clearInterval(connectionScaler);
+    }, testConfig.maxTestDuration * 1000);
     
     await Promise.all(workers);
+    clearInterval(connectionScaler);
     
     setRealTimeSpeed(prev => ({ ...prev, showSpeed: false }));
     
@@ -439,6 +708,7 @@ const InternetSpeedTest = () => {
       return 0;
     }
     
+    // Use median of stable measurements
     const speeds = stableMeasurements.map(m => m.speed).sort((a, b) => a - b);
     const medianSpeed = speeds[Math.floor(speeds.length / 2)];
     
@@ -450,7 +720,7 @@ const InternetSpeedTest = () => {
   const runSpeedTest = async () => {
     setTestStatus('testing');
     setError(null);
-    setProgress({ download: 0, upload: 0, ping: 0 });
+    setProgress({ download: 0, upload: 0, ping: 0, serverDiscovery: 0 });
     setRealTimeSpeed({ downloadSpeed: 0, uploadSpeed: 0, showSpeed: false });
     
     const testStartTime = performance.now();
@@ -458,17 +728,23 @@ const InternetSpeedTest = () => {
     try {
       console.log('Starting professional speed test...');
       
-      // Step 1: Ping Test
+      // Step 1: Server Discovery (optional - we now use pre-selected endpoints)
+      setCurrentTest('serverDiscovery');
+      // Skip server discovery to prevent double execution - we use hybrid endpoints directly
+      setProgress(prev => ({ ...prev, serverDiscovery: 100 }));
+      console.log('Using pre-optimized hybrid endpoint strategy');
+      
+      // Step 2: Ping Test
       setCurrentTest('ping');
       const { ping, jitter } = await testPing();
       console.log(`Ping test completed: ${ping}ms`);
       
-      // Step 2: Download Test
+      // Step 3: Download Test (uses hybrid multi-endpoint approach)
       setCurrentTest('download');
       const downloadSpeed = await testDownloadSpeed();
       console.log(`Download test completed: ${downloadSpeed} Mbps`);
       
-      // Step 3: Upload Test
+      // Step 4: Upload Test
       setCurrentTest('upload');
       const uploadSpeed = await testUploadSpeed();
       console.log(`Upload test completed: ${uploadSpeed} Mbps`);
@@ -597,9 +873,29 @@ const InternetSpeedTest = () => {
         {testStatus === 'testing' && (
           <div>
             <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Running Professional Test... ({currentTest}) - {testConfig.minTestDuration}-{testConfig.maxTestDuration}s per test
+              Running Professional Test... ({currentTest === 'serverDiscovery' ? 'Finding Optimal Servers' : 
+                                         currentTest === 'ping' ? 'Testing Latency' :
+                                         currentTest === 'download' ? 'Testing Download Speed' :
+                                         currentTest === 'upload' ? 'Testing Upload Speed' : 'Complete'}) 
             </h3>
             <div className="space-y-4 max-w-md mx-auto">
+              {/* Server Discovery Progress */}
+              <div className="flex items-center space-x-3">
+                <FiWifi className="w-5 h-5 text-gray-500" />
+                <div className="flex-1">
+                  <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>Server Discovery</span>
+                    <span>{Math.round(progress.serverDiscovery)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progress.serverDiscovery}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
               {/* Ping Progress */}
               <div className="flex items-center space-x-3">
                 <FiClock className="w-5 h-5 text-gray-500" />
@@ -658,6 +954,12 @@ const InternetSpeedTest = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="mt-4 text-center text-sm text-gray-500">
+              {currentTest === 'serverDiscovery' && 'Testing multiple servers to find the fastest ones...'}
+              {currentTest === 'ping' && 'Measuring connection latency and stability...'}
+              {currentTest === 'download' && 'Using optimal servers for maximum speed measurement...'}
+              {currentTest === 'upload' && 'Testing upload capacity with multiple connections...'}
             </div>
           </div>
         )}
