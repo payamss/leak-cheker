@@ -12,6 +12,7 @@ export default function Home() {
         <li>WebRTC Leaks</li>
         <li>Geolocation Leaks</li>
         <li>Dark Web Exposure</li>
+        <li>Cookie & Tracker Analysis</li>
       </ul>
     </div>
   );

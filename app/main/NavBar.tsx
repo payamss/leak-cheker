@@ -15,6 +15,7 @@ export default function Header() {
     { id: 'webrtc-leaks', label: 'WebRTC Leaks', href: '/webrtc-leaks' },
     { id: 'geo-location', label: 'Geolocation', href: '/geo-location' },
     { id: 'dark-web-exposure', label: 'Dark Web Exposure', href: '/dark-web-exposure' },
+    { id: 'cookie-tracker-test', label: 'Cookie & Tracker', href: '/cookie-tracker-test' },
   ];
 
   return (
