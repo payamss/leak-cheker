@@ -122,7 +122,7 @@ export default function CookieTrackerTestPage() {
                 Comprehensive Privacy Analysis Suite
               </h2>
               <p className="text-blue-800 mb-4">
-                Our advanced privacy testing suite performs deep analysis of your browser's privacy protection capabilities, 
+                Our advanced privacy testing suite performs deep analysis of your browser&apos;s privacy protection capabilities, 
                 including cookie policies, fingerprinting resistance, hardware exposure, and tracking vulnerabilities.
               </p>
               
@@ -254,7 +254,7 @@ export default function CookieTrackerTestPage() {
                   ].map((tab) => (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
+                      onClick={() => setActiveTab(tab.id as 'overview' | 'technical' | 'recommendations')}
                       className={`py-2 px-1 border-b-2 font-medium text-sm ${
                         activeTab === tab.id
                           ? 'border-blue-500 text-blue-600'
@@ -611,7 +611,7 @@ export default function CookieTrackerTestPage() {
                     </div>
 
                     {/* Total Score Summary */}
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300 rounded-lg p-6">
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-lg p-6">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center">
                           <span className="text-3xl mr-4">🎯</span>
@@ -773,11 +773,11 @@ export default function CookieTrackerTestPage() {
                       return <div className="text-gray-600">No recommendations available. Your privacy settings are strong!</div>;
                     }
                     const priorities = [
-                      { label: 'High Priority', key: 'critical', color: 'high' as 'high' },
-                      { label: 'Medium Priority', key: 'important', color: 'medium' as 'medium' },
-                      { label: 'Low Priority', key: 'suggested', color: 'low' as 'low' },
-                      { label: 'Informational', key: 'informational', color: 'low' as 'low' }
-                    ];
+                      { label: 'High Priority', key: 'critical', color: 'high' },
+                      { label: 'Medium Priority', key: 'important', color: 'medium' },
+                      { label: 'Low Priority', key: 'suggested', color: 'low' },
+                      { label: 'Informational', key: 'informational', color: 'low' }
+                    ] as const;
                     return priorities.map(priority => {
                       const group = recs.filter(r => r.category === priority.key);
                       if (group.length === 0) return null;
