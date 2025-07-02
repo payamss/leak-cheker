@@ -56,61 +56,110 @@ const IPLeaksTest = () => {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [rdapError, setRdapError] = useState<string | null>(null);
   const [ipv6Error, setIPv6Error] = useState<string | null>(null);
+
   useEffect(() => {
-    const fetchIPData = async () => {
-
+    const fetchAllData = async () => {
       setLoading(true);
+      
+      let fetchedIPv4: string | null = null;
 
-      // Fetch IPv4 Address
+      // Step 1: Fetch IPv4 Address first
       try {
         const ipv4Res = await fetch('https://api.ipify.org?format=json');
         if (!ipv4Res.ok) throw new Error('Failed to fetch IPv4 Address');
         const ipv4Data = await ipv4Res.json();
-        setIPv4(ipv4Data.ip);
+        fetchedIPv4 = ipv4Data.ip;
+        setIPv4(fetchedIPv4);
       } catch (err) {
-        console.error(err);
+        console.error('IPv4 fetch error:', err);
         setIPv4Error('Unable to fetch IPv4 Address.');
       }
-      // Fetch Geolocation Data
-      try {
-        if (ipv4) {
-          let geoRes = await fetch(`http://ip-api.com/json/${ipv4}`);
-          if (!geoRes.ok) geoRes = await fetch(`https://ipinfo.io/json`);
+
+      // Step 2: Fetch Geolocation Data using the IPv4
+      if (fetchedIPv4) {
+        try {
+          // Use HTTPS-only APIs for production compatibility
+          let geoRes = await fetch(`https://ipapi.co/${fetchedIPv4}/json/`);
+          
+          if (!geoRes.ok) {
+            // Fallback to ipinfo.io
+            geoRes = await fetch(`https://ipinfo.io/${fetchedIPv4}/json`);
+          }
+          
+          if (!geoRes.ok) {
+            // Second fallback to ipinfo.io without specific IP
+            geoRes = await fetch(`https://ipinfo.io/json`);
+          }
+          
           if (!geoRes.ok) throw new Error('Failed to fetch Geolocation Data');
+          
           const geoResult = await geoRes.json();
-          setGeoData(geoResult);
+          
+          // Transform ipinfo.io response to match expected format
+          if (geoResult.loc) {
+            const [lat, lon] = geoResult.loc.split(',').map(Number);
+            const transformedGeoData = {
+              query: geoResult.ip || fetchedIPv4,
+              isp: geoResult.org || 'Unknown',
+              org: geoResult.org || 'Unknown',
+              as: geoResult.org || 'Unknown',
+              country: geoResult.country_name || geoResult.country || 'Unknown',
+              countryCode: geoResult.country && geoResult.country.length === 2 ? geoResult.country : undefined,
+              city: geoResult.city || 'Unknown',
+              regionName: geoResult.region || 'Unknown',
+              lat: lat || 0,
+              lon: lon || 0,
+              timezone: geoResult.timezone || 'Unknown',
+              zip: geoResult.postal || 'Unknown',
+            };
+            setGeoData(transformedGeoData);
+          } else if (geoResult.query || geoResult.ip) {
+            // If it's already in the expected format (from ipapi.co or other APIs)
+            const normalizedGeoData = {
+              ...geoResult,
+              query: geoResult.query || geoResult.ip || fetchedIPv4,
+              countryCode: geoResult.countryCode && geoResult.countryCode.length === 2 ? geoResult.countryCode : undefined,
+            };
+            setGeoData(normalizedGeoData);
+          } else {
+            throw new Error('Invalid geolocation response format');
+          }
+        } catch (err) {
+          console.error('Geolocation fetch error:', err);
+          setGeoError('Unable to fetch Geolocation Data.');
         }
-      } catch (err) {
-        console.error(err);
-        setGeoError('Unable to fetch Geolocation Data.');
-      }
-      // Fetch RDAP Data
-      try {
-        if (ipv4) {
-          const rdapRes = await fetch(`https://rdap.db.ripe.net/ip/${ipv4}`);
+
+        // Step 3: Fetch RDAP Data using the IPv4
+        try {
+          const rdapRes = await fetch(`https://rdap.db.ripe.net/ip/${fetchedIPv4}`);
           if (!rdapRes.ok) throw new Error('Failed to fetch RDAP Data');
           const rdapResult = await rdapRes.json();
           setRdapData(rdapResult);
+        } catch (err) {
+          console.error('RDAP fetch error:', err);
+          setRdapError('Unable to fetch RDAP Data.');
         }
-      } catch (err) {
-        console.error(err);
+      } else {
+        setGeoError('Unable to fetch Geolocation Data.');
         setRdapError('Unable to fetch RDAP Data.');
       }
-      // Fetch IPv6 Address
+
+      // Step 4: Fetch IPv6 Address (independent of IPv4)
       try {
         const ipv6Res = await fetch('https://api64.ipify.org?format=json');
         if (!ipv6Res.ok) throw new Error('Failed to fetch IPv6 Address');
         const ipv6Data = await ipv6Res.json();
         setIPv6(ipv6Data.ip);
       } catch (err) {
-        console.error(err);
+        console.error('IPv6 fetch error:', err);
         setIPv6Error('Unable to fetch IPv6 Address.');
       }
 
       setLoading(false);
     };
-    fetchIPData();
-  }, [ipv4]);
+
+    fetchAllData();
+  }, []); // Remove ipv4 dependency to prevent loops
 
   // Helper function to display RDAP entities
   const renderEntities = (entities: RDAPData['entities']) => {
@@ -120,9 +169,9 @@ const IPLeaksTest = () => {
         className="p-4 bg-gray-50 border rounded-md shadow-sm space-y-2"
       >
         <p className="font-semibold text-gray-800">
-          Role: {entity.roles.join(', ')}
+          Role: {entity.roles?.join(', ') || 'Unknown'}
         </p>
-        {entity.vcardArray[1].map((field: any[], idx: number) => (
+        {entity.vcardArray && entity.vcardArray[1] && entity.vcardArray[1].map((field: any[], idx: number) => (
           <div key={idx} className="text-sm text-gray-600">
             {field[0] === 'fn' && <p>Name: {field[3]}</p>}
             {field[0] === 'adr' && <p>Address: {field[1]?.label}</p>}
@@ -203,13 +252,15 @@ const IPLeaksTest = () => {
                         <span>
                           <strong>Location:</strong> {geoData?.city}, {geoData?.regionName}, {geoData?.country}
                         </span>
-                        <Image
-                          src={`https://flagcdn.com/w320/${geoData?.countryCode.toLowerCase()}.png`}
-                          alt="Country Flag"
-                          width={30}
-                          height={20}
-                          className=" ml-2 rounded-sm"
-                        />
+                        {geoData?.countryCode && (
+                          <Image
+                            src={`https://flagcdn.com/w320/${geoData.countryCode.toLowerCase()}.png`}
+                            alt="Country Flag"
+                            width={30}
+                            height={20}
+                            className=" ml-2 rounded-sm"
+                          />
+                        )}
                       </p>
                     </div>
 
