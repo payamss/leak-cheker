@@ -25,13 +25,23 @@ export class PrivacyScorer {
     // Hardware fingerprinting protection (0-15 points)
     score += this.getHardwareProtectionScore(result.hardware, result.browser);
 
+    // WebRTC leak protection (0-20 points)
+    if (result.webrtc) {
+      score += this.getWebRTCProtectionScore(result.webrtc);
+    }
+
+    // Tracking protection (0-15 points)
+    if (result.tracking) {
+      score += this.getTrackingProtectionScore(result.tracking);
+    }
+
     // Do Not Track bonus (0-10 points)
     if (result.browser.doNotTrack) {
       score += 10;
     }
 
-    // Scale to 100 (total possible: 115 points)
-    const scaledScore = (score / 115) * 100;
+    // Scale to 100 (total possible: 150 points)
+    const scaledScore = (score / 150) * 100;
     return Math.min(100, Math.max(0, Math.round(scaledScore)));
   }
 
@@ -262,6 +272,47 @@ export class PrivacyScorer {
     }
 
     return Math.min(15, score);
+  }
+
+  private getWebRTCProtectionScore(webrtc: any): number {
+    let score = 0;
+
+    // WebRTC completely blocked (+20 points)
+    if (webrtc.webrtcBlocked) {
+      score += 20;
+    } else if (!webrtc.hasIPLeak) {
+      // WebRTC available but no IP leak (+15 points)
+      score += 15;
+    } else {
+      // IP leak detected (0 points, major privacy issue)
+      score += 0;
+    }
+
+    return score;
+  }
+
+  private getTrackingProtectionScore(tracking: any): number {
+    let score = 0;
+
+    // Score based on tracking level
+    switch (tracking.trackingLevel) {
+      case 'minimal':
+        score += 15; // Excellent protection
+        break;
+      case 'moderate':
+        score += 10; // Good protection
+        break;
+      case 'heavy':
+        score += 5; // Poor protection
+        break;
+      case 'excessive':
+        score += 0; // No protection
+        break;
+      default:
+        score += 7; // Unknown, assume moderate
+    }
+
+    return score;
   }
 
   private getBrowserScoreReason(browser: BrowserInfo, score: number): string {

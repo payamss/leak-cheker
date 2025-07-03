@@ -35,6 +35,33 @@ export interface FingerprintingResult {
   fontsDetected: string[];
   pluginsDetected: string[];
   uniquenessScore: number;
+  audioFingerprint?: string | null;
+  batteryInfo?: any;
+  gamepadInfo?: any[];
+  mediaDevices?: any[];
+}
+
+export interface WebRTCLeakResult {
+  webrtcBlocked: boolean;
+  hasIPLeak: boolean;
+  localIPs: string[];
+  publicIPs: string[];
+  webrtcSupported: boolean;
+  stunServersAccessible: boolean;
+  testDuration: number;
+  protectionLevel: 'excellent' | 'good' | 'poor' | 'critical';
+}
+
+export interface TrackingDetectionResult {
+  totalTrackers: number;
+  thirdPartyScripts: string[];
+  trackingPixels: string[];
+  socialWidgets: string[];
+  fingerprinters: string[];
+  beacons: string[];
+  trackingLevel: 'minimal' | 'moderate' | 'heavy' | 'excessive' | 'unknown';
+  testDuration: number;
+  recommendations: string[];
 }
 
 export interface PrivacyTestResult {
@@ -42,6 +69,8 @@ export interface PrivacyTestResult {
   hardware: HardwareInfo;
   cookies: CookieTestResult;
   fingerprinting: FingerprintingResult;
+  webrtc?: WebRTCLeakResult;
+  tracking?: TrackingDetectionResult;
   privacyScore: number;
   recommendations: string[];
 }

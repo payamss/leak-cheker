@@ -8,6 +8,8 @@ import { BrowserDetector } from './BrowserDetector';
 import { CookieTester } from './CookieTester';
 import { FingerprintDetector } from './FingerprintDetector';
 import { HardwareDetector } from './HardwareDetector';
+import { WebRTCLeakDetector } from './WebRTCLeakDetector';
+import { TrackingDetector } from './TrackingDetector';
 import { PrivacyScorer } from './PrivacyScorer';
 import { ReportGenerator } from './ReportGenerator';
 
@@ -17,6 +19,8 @@ export class PrivacyTestService {
   private cookieTester: CookieTester;
   private fingerprintDetector: FingerprintDetector;
   private hardwareDetector: HardwareDetector;
+  private webrtcLeakDetector: WebRTCLeakDetector;
+  private trackingDetector: TrackingDetector;
   private privacyScorer: PrivacyScorer;
   private reportGenerator: ReportGenerator;
 
@@ -25,6 +29,8 @@ export class PrivacyTestService {
     this.cookieTester = CookieTester.getInstance();
     this.fingerprintDetector = FingerprintDetector.getInstance();
     this.hardwareDetector = HardwareDetector.getInstance();
+    this.webrtcLeakDetector = WebRTCLeakDetector.getInstance();
+    this.trackingDetector = TrackingDetector.getInstance();
     this.privacyScorer = PrivacyScorer.getInstance();
     this.reportGenerator = ReportGenerator.getInstance();
   }
@@ -50,12 +56,16 @@ export class PrivacyTestService {
         browserInfo,
         cookieResult,
         fingerprintingResult,
-        hardwareInfo
+        hardwareInfo,
+        webrtcResult,
+        trackingResult
       ] = await Promise.all([
         this.browserDetector.detect(),
         this.cookieTester.test(),
         this.fingerprintDetector.detect(),
-        this.hardwareDetector.detect()
+        this.hardwareDetector.detect(),
+        this.webrtcLeakDetector.detect(),
+        this.trackingDetector.detect()
       ]);
 
       // Generate technical recommendations
@@ -63,7 +73,9 @@ export class PrivacyTestService {
         browserInfo,
         cookieResult,
         fingerprintingResult,
-        hardwareInfo
+        hardwareInfo,
+        webrtcResult,
+        trackingResult
       );
 
       // Calculate privacy score with detailed breakdown
@@ -104,8 +116,14 @@ export class PrivacyTestService {
           webglBlocked: fingerprintingResult.webglBlocked,
           fontsDetected: fingerprintingResult.fontsDetected,
           pluginsDetected: fingerprintingResult.pluginsDetected,
-          uniquenessScore: fingerprintingResult.uniquenessScore
+          uniquenessScore: fingerprintingResult.uniquenessScore,
+          audioFingerprint: fingerprintingResult.audioFingerprint,
+          batteryInfo: fingerprintingResult.batteryInfo,
+          gamepadInfo: fingerprintingResult.gamepadInfo,
+          mediaDevices: fingerprintingResult.mediaDevices
         },
+        webrtc: webrtcResult,
+        tracking: trackingResult,
         privacyScore: scoreBreakdown.percentage,
         recommendations: recommendations.map(r => r.title)
       };
@@ -249,7 +267,9 @@ export class PrivacyTestService {
     browserInfo: any,
     cookieResult: any,
     fingerprintingResult: any,
-    hardwareInfo: any
+    hardwareInfo: any,
+    webrtcResult?: any,
+    trackingResult?: any
   ): TechnicalRecommendation[] {
     const recommendations: TechnicalRecommendation[] = [];
 
@@ -377,6 +397,50 @@ export class PrivacyTestService {
           privacyGain: 10,
           usabilityImpact: 'low',
           breakageRisk: 'low'
+        }
+      });
+    }
+
+    // WebRTC leak recommendations
+    if (webrtcResult && webrtcResult.hasIPLeak) {
+      recommendations.push({
+        category: 'critical',
+        title: 'Block WebRTC IP Leaks',
+        description: 'WebRTC is leaking your real IP address, which can compromise VPN/proxy privacy.',
+        technicalDetails: `Detected ${webrtcResult.localIPs.length + webrtcResult.publicIPs.length} IP addresses through WebRTC.`,
+        implementation: {
+          browserSettings: [
+            'Chrome: chrome://flags > Disable WebRTC',
+            'Firefox: media.peerconnection.enabled = false',
+            'Edge: edge://flags > Disable WebRTC'
+          ],
+          extensions: ['WebRTC Leak Prevent', 'uBlock Origin (advanced settings)'],
+          advanced: ['Use VPN with WebRTC leak protection', 'Configure firewall to block WebRTC']
+        },
+        impact: {
+          privacyGain: 35,
+          usabilityImpact: 'medium',
+          breakageRisk: 'high'
+        }
+      });
+    }
+
+    // Tracking detection recommendations
+    if (trackingResult && trackingResult.totalTrackers > 5) {
+      recommendations.push({
+        category: 'important',
+        title: 'Block Excessive Tracking',
+        description: 'Multiple tracking scripts detected on this page.',
+        technicalDetails: `${trackingResult.totalTrackers} trackers detected including analytics, ads, and social widgets.`,
+        implementation: {
+          browserSettings: ['Enable Enhanced Tracking Protection', 'Block third-party cookies'],
+          extensions: ['uBlock Origin', 'Privacy Badger', 'Ghostery'],
+          advanced: ['Use DNS-based ad blocking (Pi-hole)', 'Configure browser with strict privacy settings']
+        },
+        impact: {
+          privacyGain: 25,
+          usabilityImpact: 'low',
+          breakageRisk: 'medium'
         }
       });
     }

@@ -123,7 +123,7 @@ export default function CookieTrackerTestPage() {
               </h2>
               <p className="text-blue-800 mb-4">
                 Our advanced privacy testing suite performs deep analysis of your browser&apos;s privacy protection capabilities, 
-                including cookie policies, fingerprinting resistance, hardware exposure, and tracking vulnerabilities.
+                including cookie policies, fingerprinting resistance, hardware exposure, WebRTC IP leaks, and real-time tracking detection.
               </p>
               
               <div className="grid md:grid-cols-4 gap-4 text-sm">
@@ -438,6 +438,78 @@ export default function CookieTrackerTestPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* WebRTC Leak Detection */}
+                    {detailedResult.userFriendly.webrtc && (
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900">🌐 WebRTC IP Leaks</h3>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            detailedResult.userFriendly.webrtc.webrtcBlocked 
+                              ? 'bg-green-100 text-green-800' 
+                              : detailedResult.userFriendly.webrtc.hasIPLeak
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {detailedResult.userFriendly.webrtc.webrtcBlocked ? '🔒 BLOCKED' : 
+                             detailedResult.userFriendly.webrtc.hasIPLeak ? '🚨 LEAKING' : '⚠️ ENABLED'}
+                          </span>
+                        </div>
+                        <p className="text-gray-700 mb-3">
+                          {detailedResult.userFriendly.webrtc.webrtcBlocked 
+                            ? 'WebRTC is disabled, preventing IP address leaks.' 
+                            : detailedResult.userFriendly.webrtc.hasIPLeak
+                            ? `WebRTC is leaking ${detailedResult.userFriendly.webrtc.localIPs.length + detailedResult.userFriendly.webrtc.publicIPs.length} IP address(es).`
+                            : 'WebRTC is enabled but no IP leaks detected.'}
+                        </p>
+                        {detailedResult.userFriendly.webrtc.hasIPLeak && (
+                          <div className="text-sm text-gray-600 space-y-1">
+                            {detailedResult.userFriendly.webrtc.localIPs.length > 0 && (
+                              <p>Local IPs: {detailedResult.userFriendly.webrtc.localIPs.join(', ')}</p>
+                            )}
+                            {detailedResult.userFriendly.webrtc.publicIPs.length > 0 && (
+                              <p className="text-red-600">Public IPs: {detailedResult.userFriendly.webrtc.publicIPs.join(', ')}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Real-time Tracking Detection */}
+                    {detailedResult.userFriendly.tracking && (
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900">🕵️ Active Tracking</h3>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            detailedResult.userFriendly.tracking.trackingLevel === 'minimal' 
+                              ? 'bg-green-100 text-green-800' 
+                              : detailedResult.userFriendly.tracking.trackingLevel === 'moderate'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {detailedResult.userFriendly.tracking.trackingLevel.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-gray-700 mb-3">
+                          {detailedResult.userFriendly.tracking.totalTrackers === 0 
+                            ? 'No active trackers detected on this page.' 
+                            : `${detailedResult.userFriendly.tracking.totalTrackers} active tracker(s) detected on this page.`}
+                        </p>
+                        {detailedResult.userFriendly.tracking.totalTrackers > 0 && (
+                          <div className="text-sm text-gray-600 space-y-1">
+                            {detailedResult.userFriendly.tracking.thirdPartyScripts.length > 0 && (
+                              <p>Third-party Scripts: {detailedResult.userFriendly.tracking.thirdPartyScripts.length}</p>
+                            )}
+                            {detailedResult.userFriendly.tracking.socialWidgets.length > 0 && (
+                              <p>Social Widgets: {detailedResult.userFriendly.tracking.socialWidgets.length}</p>
+                            )}
+                            {detailedResult.userFriendly.tracking.trackingPixels.length > 0 && (
+                              <p>Tracking Pixels: {detailedResult.userFriendly.tracking.trackingPixels.length}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Browser Information */}

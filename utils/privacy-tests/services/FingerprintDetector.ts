@@ -11,11 +11,15 @@ export class FingerprintDetector {
   }
 
   public async detect(): Promise<FingerprintingResult> {
-    const [canvasBlocked, webglBlocked, fontsDetected, pluginsDetected] = await Promise.all([
+    const [canvasBlocked, webglBlocked, fontsDetected, pluginsDetected, audioFingerprint, batteryInfo, gamepadInfo, mediaDevices] = await Promise.all([
       this.testCanvasFingerprinting(),
       this.testWebGLFingerprinting(),
       this.detectFonts(),
-      this.detectPlugins()
+      this.detectPlugins(),
+      this.generateAudioFingerprint(),
+      this.detectBatteryAPI(),
+      this.detectGamepadAPI(),
+      this.detectMediaDevices()
     ]);
 
     const uniquenessScore = this.calculateUniquenessScore({
@@ -23,7 +27,11 @@ export class FingerprintDetector {
       webglBlocked,
       fontsDetected,
       pluginsDetected,
-      uniquenessScore: 0 // Will be calculated
+      uniquenessScore: 0, // Will be calculated
+      audioFingerprint,
+      batteryInfo,
+      gamepadInfo,
+      mediaDevices
     });
 
     return {
@@ -31,7 +39,11 @@ export class FingerprintDetector {
       webglBlocked,
       fontsDetected,
       pluginsDetected,
-      uniquenessScore
+      uniquenessScore,
+      audioFingerprint,
+      batteryInfo,
+      gamepadInfo,
+      mediaDevices
     };
   }
 
@@ -146,7 +158,86 @@ export class FingerprintDetector {
     return plugins;
   }
 
-  private calculateUniquenessScore(result: FingerprintingResult): number {
+  private async generateAudioFingerprint(): Promise<string | null> {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const analyser = audioContext.createAnalyser();
+      const scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+      oscillator.type = 'triangle';
+      oscillator.frequency.value = 440;
+      oscillator.connect(analyser);
+      analyser.connect(scriptProcessor);
+      scriptProcessor.connect(audioContext.destination);
+
+      oscillator.start(0);
+
+      const audioData = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(audioData);
+
+      oscillator.stop(0);
+      audioContext.close();
+
+      return Array.from(audioData.slice(0, 20)).join('');
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private async detectBatteryAPI(): Promise<any> {
+    try {
+      if ('getBattery' in navigator) {
+        const battery = await (navigator as any).getBattery();
+        return {
+          charging: battery.charging,
+          level: Math.round(battery.level * 100),
+          chargingTime: battery.chargingTime,
+          dischargingTime: battery.dischargingTime
+        };
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private async detectGamepadAPI(): Promise<any[]> {
+    try {
+      if ('getGamepads' in navigator) {
+        const gamepads = navigator.getGamepads();
+        return Array.from(gamepads)
+          .filter(gamepad => gamepad !== null)
+          .map(gamepad => ({
+            id: gamepad?.id,
+            connected: gamepad?.connected,
+            buttons: gamepad?.buttons.length,
+            axes: gamepad?.axes.length
+          }));
+      }
+      return [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  private async detectMediaDevices(): Promise<any[]> {
+    try {
+      if ('mediaDevices' in navigator && 'enumerateDevices' in navigator.mediaDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        return devices.map(device => ({
+          kind: device.kind,
+          label: device.label || 'Unknown',
+          deviceId: device.deviceId ? 'present' : 'absent'
+        }));
+      }
+      return [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  private calculateUniquenessScore(result: any): number {
     let score = 0;
 
     // Canvas fingerprinting (0-30 points)
@@ -166,6 +257,26 @@ export class FingerprintDetector {
     // Plugin count (0-20 points)
     const pluginCount = result.pluginsDetected.length;
     score += Math.min(20, pluginCount * 4);
+
+    // Audio fingerprinting (0-15 points)
+    if (result.audioFingerprint) {
+      score += 15;
+    }
+
+    // Battery API (0-10 points)
+    if (result.batteryInfo) {
+      score += 10;
+    }
+
+    // Gamepad API (0-5 points)
+    if (result.gamepadInfo && result.gamepadInfo.length > 0) {
+      score += 5;
+    }
+
+    // Media devices (0-10 points)
+    if (result.mediaDevices && result.mediaDevices.length > 0) {
+      score += Math.min(10, result.mediaDevices.length * 2);
+    }
 
     return Math.round(score);
   }
