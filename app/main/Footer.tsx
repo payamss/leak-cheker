@@ -7,7 +7,7 @@ export default function Footer() {
         <nav className="mt-2">
           <Link href="/privacy-policy" className="text-gray-400 hover:text-white"><strong>Privacy Policy</strong></Link>
         </nav>
-        <p className="text-sm ">&copy; {new Date().getFullYear()} Security Risk Checker. All rights reserved for <Link className="text-sm underline" href="https://shariat.de">Shariat.de</Link></p>
+        <p className="text-sm ">&copy; {new Date().getFullYear()} Security Suite. All rights reserved for <Link className="text-sm underline" href="https://shariat.de">Shariat.de</Link></p>
       </div>
     </footer>
   );

@@ -296,12 +296,12 @@ export default function CookieTrackerTestPage() {
                       </pre>
                     </>
                   )}
-                  <button
+                    <button
                     onClick={() => exportReport('json')}
-                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
-                  >
+                      className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                    >
                     Export JSON
-                  </button>
+                    </button>
                 </div>
               </div>
 
@@ -879,67 +879,67 @@ export default function CookieTrackerTestPage() {
                       if (group.length === 0) return null;
                       return (
                         <div key={priority.key} className="bg-white border border-gray-200 rounded-lg p-6">
-                          <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold text-gray-900">{priority.label}</h3>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(priority.color)}`}>
                               {priority.label.toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="space-y-4">
+                        </span>
+                      </div>
+                      <div className="space-y-4">
                             {group.map((rec, recIndex) => (
-                              <div key={recIndex} className="border border-gray-200 rounded-lg p-4">
-                                <div className="flex justify-between items-start mb-3">
-                                  <h4 className="font-semibold text-gray-900">{rec.title}</h4>
-                                  <span className="text-sm text-green-600 font-medium">+{rec.impact.privacyGain}% privacy</span>
-                                </div>
-                                <p className="text-gray-700 mb-3">{rec.description}</p>
-                                <div className="text-sm text-gray-600 mb-3">
-                                  <strong>Technical Details:</strong> {rec.technicalDetails}
-                                </div>
-                                {/* Implementation Steps */}
-                                {rec.implementation.browserSettings && (
-                                  <div className="mb-3">
-                                    <strong className="text-sm text-gray-900">Browser Settings:</strong>
-                                    <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
-                                      {rec.implementation.browserSettings.map((setting, settingIndex) => (
-                                        <li key={settingIndex}>{setting}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {rec.implementation.extensions && (
-                                  <div className="mb-3">
-                                    <strong className="text-sm text-gray-900">Recommended Extensions:</strong>
-                                    <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
-                                      {rec.implementation.extensions.map((ext, extIndex) => (
-                                        <li key={extIndex}>{ext}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {rec.implementation.advanced && (
-                                  <div className="mb-3">
-                                    <strong className="text-sm text-gray-900">Advanced Configuration:</strong>
-                                    <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
-                                      {rec.implementation.advanced.map((adv, advIndex) => (
-                                        <li key={advIndex}>{adv}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {/* Impact Analysis */}
-                                <div className="flex space-x-4 text-xs">
-                                  <span className="bg-gray-100 px-2 py-1 rounded">
-                                    Usability Impact: {rec.impact.usabilityImpact}
-                                  </span>
-                                  <span className="bg-gray-100 px-2 py-1 rounded">
-                                    Breakage Risk: {rec.impact.breakageRisk}
-                                  </span>
-                                </div>
+                            <div key={recIndex} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-3">
+                                <h4 className="font-semibold text-gray-900">{rec.title}</h4>
+                                <span className="text-sm text-green-600 font-medium">+{rec.impact.privacyGain}% privacy</span>
                               </div>
-                            ))}
-                          </div>
-                        </div>
+                              <p className="text-gray-700 mb-3">{rec.description}</p>
+                              <div className="text-sm text-gray-600 mb-3">
+                                <strong>Technical Details:</strong> {rec.technicalDetails}
+                              </div>
+                              {/* Implementation Steps */}
+                              {rec.implementation.browserSettings && (
+                                <div className="mb-3">
+                                  <strong className="text-sm text-gray-900">Browser Settings:</strong>
+                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                    {rec.implementation.browserSettings.map((setting, settingIndex) => (
+                                      <li key={settingIndex}>{setting}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {rec.implementation.extensions && (
+                                <div className="mb-3">
+                                  <strong className="text-sm text-gray-900">Recommended Extensions:</strong>
+                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                    {rec.implementation.extensions.map((ext, extIndex) => (
+                                      <li key={extIndex}>{ext}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {rec.implementation.advanced && (
+                                <div className="mb-3">
+                                  <strong className="text-sm text-gray-900">Advanced Configuration:</strong>
+                                  <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-gray-700">
+                                    {rec.implementation.advanced.map((adv, advIndex) => (
+                                      <li key={advIndex}>{adv}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {/* Impact Analysis */}
+                              <div className="flex space-x-4 text-xs">
+                                <span className="bg-gray-100 px-2 py-1 rounded">
+                                  Usability Impact: {rec.impact.usabilityImpact}
+                                </span>
+                                <span className="bg-gray-100 px-2 py-1 rounded">
+                                  Breakage Risk: {rec.impact.breakageRisk}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
                       );
                     });
                   })()}

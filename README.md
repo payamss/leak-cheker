@@ -1,8 +1,8 @@
-# Security Risk Checker
+# Security Suite
 
 ## Overview
 
-Security Risk Checker is a comprehensive web application designed to identify various security vulnerabilities and information leaks directly in your browser. Built with modern web technologies like Next.js, TypeScript, and Tailwind CSS, the application ensures a clean, responsive, and user-friendly interface.
+Security Suite is a comprehensive web application designed to identify various security vulnerabilities and information leaks directly in your browser. Built with modern web technologies like Next.js, TypeScript, and Tailwind CSS, the application ensures a clean, responsive, and user-friendly interface.
 
 ## Features
 

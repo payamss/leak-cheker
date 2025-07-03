@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Sidebar from "./components/Sidebar";
+import LayoutWrapper from "./components/LayoutWrapper";
 import Footer from "./main/Footer";
 import "./globals.css";
 
@@ -17,9 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Security Risk Checker",
+  title: "Security Suite",
   description:
-    "What is a DNS Leak? A DNS Leak occurs when your DNS queries are sent to unintended DNS servers—often the default servers provided by your ISP—rather than private or VPN-provided servers. This exposes your browsing activity to your ISP or third parties, undermining your online privacy and security.",
+    "Comprehensive security testing platform featuring DNS leak detection, IP leak testing, WebRTC vulnerability assessment, VPN effectiveness analysis, privacy auditing, and dark web exposure monitoring. Protect your digital privacy and security with our advanced testing tools.",
 };
 
 export default function RootLayout({
@@ -32,11 +33,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gray-100`}
       >
-        <Sidebar />
-        <div className="lg:ml-64 min-h-screen flex flex-col">
-          <main className="flex-grow p-4 lg:p-6">{children}</main>
+        <LayoutWrapper>
+          <Sidebar />
+          {children}
           <Footer />
-        </div>
+        </LayoutWrapper>
         <CookieConsent />
       </body>
     </html>

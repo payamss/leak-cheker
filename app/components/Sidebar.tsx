@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { useSidebar } from './LayoutWrapper';
 import { 
   FiHome, 
   FiGlobe, 
@@ -104,8 +105,12 @@ const navItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const sidebarContext = useSidebar();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  
+  // Fallback for SSR/hydration
+  const isCollapsed = sidebarContext?.isCollapsed ?? false;
+  const setIsCollapsed = sidebarContext?.setIsCollapsed ?? (() => {});
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -147,42 +152,47 @@ export default function Sidebar() {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          {!isCollapsed && (
+          <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'space-x-3'}`}>
             <Link href="/" className="flex items-center space-x-3" onClick={closeMobileMenu}>
-              <Image
-                src="/images/logo.png"
-                alt="Security Risk Checker Logo"
-                className="h-8 w-8 rounded"
-                width={32}
-                height={32}
-              />
-              <div className="flex flex-col">
-                <span className="text-sm font-bold text-blue-400">Security Risk</span>
-                <span className="text-xs text-gray-300">Checker.de</span>
+              <div className="relative">
+                <Image
+                  src="/images/logo.png"
+                  alt="Security Suite Logo"
+                  className="h-8 w-8 rounded object-cover"
+                  width={32}
+                  height={32}
+                  priority
+                />
               </div>
+              {!isCollapsed && (
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-blue-400">Security Suite</span>
+                  <span className="text-xs text-gray-300"></span>
+                </div>
+              )}
             </Link>
+          </div>
+
+          {/* Collapse Toggle - Hidden on Mobile */}
+          {!isCollapsed && (
+            <button
+              onClick={toggleCollapse}
+              className="hidden lg:block text-gray-400 hover:text-white transition-colors p-1 rounded"
+              title="Collapse sidebar"
+            >
+              <FiChevronLeft className="w-4 h-4" />
+            </button>
           )}
           
           {isCollapsed && (
-            <Link href="/" className="flex justify-center w-full" onClick={closeMobileMenu}>
-              <Image
-                src="/images/logo.png"
-                alt="Logo"
-                className="h-8 w-8 rounded"
-                width={32}
-                height={32}
-              />
-            </Link>
+            <button
+              onClick={toggleCollapse}
+              className="hidden lg:block absolute top-4 right-2 text-gray-400 hover:text-white transition-colors p-1 rounded"
+              title="Expand sidebar"
+            >
+              <FiChevronRight className="w-4 h-4" />
+            </button>
           )}
-
-          {/* Collapse Toggle - Hidden on Mobile */}
-          <button
-            onClick={toggleCollapse}
-            className="hidden lg:block text-gray-400 hover:text-white transition-colors p-1 rounded"
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isCollapsed ? <FiChevronRight className="w-4 h-4" /> : <FiChevronLeft className="w-4 h-4" />}
-          </button>
         </div>
 
         {/* Navigation */}
@@ -231,7 +241,7 @@ export default function Sidebar() {
         <div className="border-t border-gray-700 p-4">
           {!isCollapsed ? (
             <div className="text-center">
-              <p className="text-xs text-gray-400 mb-1">Security Test Suite</p>
+              <p className="text-xs text-gray-400 mb-1">Security Suite</p>
                               <p className="text-xs text-gray-500">v1.2.1</p>
             </div>
           ) : (
