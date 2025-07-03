@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+type TechnicalDetailsValue = string | number | boolean | string[] | Record<string, unknown> | null | undefined;
+
 interface PrivacyScoreCardProps {
   title: string;
   icon: string;
@@ -9,7 +11,7 @@ interface PrivacyScoreCardProps {
   maxScore: number;
   reason: string;
   colorScheme: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'yellow' | 'indigo';
-  technicalDetails: Record<string, any>;
+  technicalDetails: Record<string, TechnicalDetailsValue>;
   className?: string;
 }
 
@@ -86,7 +88,7 @@ export default function PrivacyScoreCard({
   const colors = colorSchemes[colorScheme];
   const percentage = Math.round((score / maxScore) * 100);
 
-  const formatTechnicalValue = (key: string, value: any): string => {
+  const formatTechnicalValue = (key: string, value: TechnicalDetailsValue): string => {
     if (Array.isArray(value)) {
       if (value.length === 0) return 'None';
       if (value.length <= 3) return value.join(', ');
@@ -169,7 +171,7 @@ export default function PrivacyScoreCard({
           <div className="mt-4 p-3 bg-white bg-opacity-50 rounded border">
             <h6 className="font-medium text-gray-900 mb-2">What This Means</h6>
             <p className="text-sm text-gray-700">
-              {getContextualExplanation(title, technicalDetails)}
+              {getContextualExplanation(title)}
             </p>
           </div>
         </div>
@@ -178,7 +180,7 @@ export default function PrivacyScoreCard({
   );
 }
 
-function getContextualExplanation(title: string, details: Record<string, any>): string {
+function getContextualExplanation(title: string): string {
   switch (title.toLowerCase()) {
     case 'browser':
       return `Your browser type and version affect privacy features available. Privacy-focused browsers like Tor Browser provide network-level anonymity, while others may have different tracking protection capabilities.`;
