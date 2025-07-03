@@ -17,7 +17,7 @@ export class PrivacyScorer {
     score += this.getBrowserBaseScore(result.browser);
 
     // Cookie protection (0-30 points)
-    score += this.getCookieProtectionScore(result.cookies);
+    score += this.getCookieProtectionScore(result.cookies, result.browser);
 
     // Fingerprinting protection (0-40 points)  
     score += this.getFingerprintingProtectionScore(result.fingerprinting);
@@ -100,7 +100,7 @@ export class PrivacyScorer {
   public calculateDetailedScore(result: PrivacyTestResult): ScoreBreakdown {
     // Calculate individual component scores
     const browserScore = this.getBrowserBaseScore(result.browser);
-    const cookieScore = this.getCookieProtectionScore(result.cookies);
+    const cookieScore = this.getCookieProtectionScore(result.cookies, result.browser);
     const fingerprintingScore = this.getFingerprintingProtectionScore(result.fingerprinting);
     const hardwareScore = this.getHardwareProtectionScore(result.hardware, result.browser);
     const doNotTrackScore = result.browser.doNotTrack ? 10 : 0;
@@ -125,7 +125,7 @@ export class PrivacyScorer {
         cookies: {
           score: Math.round((cookieScore / 30) * 30), // Scale to max 30
           max: 30,
-          reason: this.getCookieScoreReason(result.cookies, cookieScore)
+          reason: this.getCookieScoreReason(result.cookies, cookieScore, result.browser)
         },
         fingerprinting: {
           score: Math.round((fingerprintingScore / 40) * 40), // Scale to max 40
@@ -168,12 +168,23 @@ export class PrivacyScorer {
     }
   }
 
-  private getCookieProtectionScore(cookies: CookieTestResult): number {
+  private getCookieProtectionScore(cookies: CookieTestResult, browser?: BrowserInfo): number {
     let score = 0;
 
-    // Third-party cookies blocked (+15 points)
-    if (cookies.thirdPartyCookiesBlocked) {
-      score += 15;
+    // Special handling for Tor Browser - it has different cookie behavior by design
+    if (browser?.name.toLowerCase() === 'tor browser') {
+      // Tor Browser allows some cookies for functionality but provides network-level protection
+      // Give substantial credit even if technical cookie blocking isn't detected at browser level
+      if (cookies.thirdPartyCookiesBlocked) {
+        score += 15; // Full points if cookies are blocked at browser level too
+      } else {
+        score += 12; // Most points for Tor's network-level protection even if cookies work
+      }
+    } else {
+      // Standard scoring for other browsers
+      if (cookies.thirdPartyCookiesBlocked) {
+        score += 15;
+      }
     }
 
     // SameSite cookie policies (+5 points each when blocked)
@@ -326,9 +337,19 @@ export class PrivacyScorer {
     return 'Unknown browser with limited privacy assessment';
   }
 
-  private getCookieScoreReason(cookies: CookieTestResult, score: number): string {
+  private getCookieScoreReason(cookies: CookieTestResult, score: number, browser?: BrowserInfo): string {
     const reasons = [];
-    if (cookies.thirdPartyCookiesBlocked) reasons.push('3rd-party cookies blocked');
+
+    if (browser?.name.toLowerCase() === 'tor browser') {
+      if (cookies.thirdPartyCookiesBlocked) {
+        reasons.push('Tor network + browser-level cookie blocking');
+      } else {
+        reasons.push('Tor network protection (cookies allowed for functionality)');
+      }
+    } else {
+      if (cookies.thirdPartyCookiesBlocked) reasons.push('3rd-party cookies blocked');
+    }
+
     if (cookies.sameSiteNoneBlocked) reasons.push('SameSite=None blocked');
     if (cookies.sameSiteLaxBlocked) reasons.push('SameSite=Lax blocked');
     if (cookies.sameSiteStrictBlocked) reasons.push('SameSite=Strict blocked');
@@ -397,7 +418,8 @@ export class PrivacyScorer {
   private calculatePenalties(result: PrivacyTestResult): Array<{ reason: string; points: number }> {
     const penalties = [];
 
-    if (!result.cookies.thirdPartyCookiesBlocked) {
+    // Don't penalize Tor Browser for cookies - it has network-level protection
+    if (!result.cookies.thirdPartyCookiesBlocked && result.browser.name.toLowerCase() !== 'tor browser') {
       penalties.push({ reason: 'Third-party cookies enabled', points: -15 });
     }
 
@@ -423,7 +445,10 @@ export class PrivacyScorer {
       bonuses.push({ reason: 'Do Not Track enabled', points: 10 });
     }
 
-    if (result.cookies.thirdPartyCookiesBlocked) {
+    // Give Tor Browser credit for network-level protection even if cookies aren't blocked at browser level
+    if (result.browser.name.toLowerCase() === 'tor browser') {
+      bonuses.push({ reason: 'Tor network anonymity protection', points: 12 });
+    } else if (result.cookies.thirdPartyCookiesBlocked) {
       bonuses.push({ reason: 'Third-party cookies blocked', points: 15 });
     }
 
