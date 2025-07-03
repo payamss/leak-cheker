@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { PrivacyTestService, DetailedPrivacyTestResult, TechnicalReport, UserFriendlyReport } from '../../utils/privacy-tests';
+import PrivacyScoreCard from './components/PrivacyScoreCard';
 
 export default function CookieTrackerTestPage() {
   const [detailedResult, setDetailedResult] = useState<DetailedPrivacyTestResult | null>(null);
@@ -557,130 +558,153 @@ export default function CookieTrackerTestPage() {
                     {/* Component Cards Grid */}
                     <div className="grid md:grid-cols-2 gap-4 mb-6">
                       {/* Browser Score */}
-                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <span className="text-2xl mr-3">🌐</span>
-                            <div>
-                              <h4 className="font-semibold text-gray-900">Browser</h4>
-                              <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.browser.score}/{detailedResult.detailed.scoreBreakdown.components.browser.max} points</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-2xl font-bold text-blue-600">
-                              {Math.round((detailedResult.detailed.scoreBreakdown.components.browser.score / detailedResult.detailed.scoreBreakdown.components.browser.max) * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.browser.score / detailedResult.detailed.scoreBreakdown.components.browser.max) * 100}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.browser.reason}</p>
-                      </div>
+                      <PrivacyScoreCard
+                        title="Browser"
+                        icon="🌐"
+                        score={detailedResult.detailed.scoreBreakdown.components.browser.score}
+                        maxScore={detailedResult.detailed.scoreBreakdown.components.browser.max}
+                        reason={detailedResult.detailed.scoreBreakdown.components.browser.reason}
+                        colorScheme="blue"
+                        technicalDetails={{
+                          browserName: detailedResult.userFriendly.browser.name,
+                          version: detailedResult.userFriendly.browser.version,
+                          userAgent: detailedResult.userFriendly.browser.userAgent,
+                          detectionMethod: detailedResult.detailed.browser.detectionMethod,
+                          privacyFeatures: detailedResult.userFriendly.browser.name === 'Tor Browser' 
+                            ? ['Network-level anonymity', 'Built-in anti-fingerprinting', 'Traffic routing through Tor network']
+                            : detailedResult.userFriendly.browser.name === 'Brave'
+                            ? ['Built-in ad blocking', 'Fingerprinting protection', 'Privacy-first defaults']
+                            : detailedResult.userFriendly.browser.name === 'Firefox'
+                            ? ['Enhanced Tracking Protection', 'Container tabs', 'Anti-fingerprinting options']
+                            : ['Standard browser features']
+                        }}
+                      />
 
                       {/* Cookies Score */}
-                      <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <span className="text-2xl mr-3">🍪</span>
-                            <div>
-                              <h4 className="font-semibold text-gray-900">Cookies</h4>
-                              <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.cookies.score}/{detailedResult.detailed.scoreBreakdown.components.cookies.max} points</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-2xl font-bold text-green-600">
-                              {Math.round((detailedResult.detailed.scoreBreakdown.components.cookies.score / detailedResult.detailed.scoreBreakdown.components.cookies.max) * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="w-full bg-green-200 rounded-full h-2 mb-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.cookies.score / detailedResult.detailed.scoreBreakdown.components.cookies.max) * 100}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.cookies.reason}</p>
-                      </div>
+                      <PrivacyScoreCard
+                        title="Cookies"
+                        icon="🍪"
+                        score={detailedResult.detailed.scoreBreakdown.components.cookies.score}
+                        maxScore={detailedResult.detailed.scoreBreakdown.components.cookies.max}
+                        reason={detailedResult.detailed.scoreBreakdown.components.cookies.reason}
+                        colorScheme="green"
+                        technicalDetails={{
+                          thirdPartyCookies: detailedResult.userFriendly.cookies.thirdPartyCookiesBlocked ? 'Blocked' : 'Allowed',
+                          sameSiteNone: detailedResult.userFriendly.cookies.sameSiteNoneBlocked ? 'Blocked' : 'Allowed',
+                          sameSiteLax: detailedResult.userFriendly.cookies.sameSiteLaxBlocked ? 'Blocked' : 'Allowed',
+                          sameSiteStrict: detailedResult.userFriendly.cookies.sameSiteStrictBlocked ? 'Blocked' : 'Allowed',
+                          localStorage: detailedResult.userFriendly.cookies.localStorageBlocked ? 'Blocked' : 'Available',
+                          sessionStorage: detailedResult.userFriendly.cookies.sessionStorageBlocked ? 'Blocked' : 'Available',
+                          testResults: detailedResult.detailed.cookies.testDetails,
+                          crossSiteIndicators: detailedResult.detailed.cookies.testDetails.crossSiteIndicators || []
+                        }}
+                      />
 
                       {/* Fingerprinting Score */}
-                      <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <span className="text-2xl mr-3">🎭</span>
-                            <div>
-                              <h4 className="font-semibold text-gray-900">Fingerprinting</h4>
-                              <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.score}/{detailedResult.detailed.scoreBreakdown.components.fingerprinting.max} points</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-2xl font-bold text-purple-600">
-                              {Math.round((detailedResult.detailed.scoreBreakdown.components.fingerprinting.score / detailedResult.detailed.scoreBreakdown.components.fingerprinting.max) * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="w-full bg-purple-200 rounded-full h-2 mb-2">
-                          <div 
-                            className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.fingerprinting.score / detailedResult.detailed.scoreBreakdown.components.fingerprinting.max) * 100}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.fingerprinting.reason}</p>
-                      </div>
+                      <PrivacyScoreCard
+                        title="Fingerprinting"
+                        icon="🎭"
+                        score={detailedResult.detailed.scoreBreakdown.components.fingerprinting.score}
+                        maxScore={detailedResult.detailed.scoreBreakdown.components.fingerprinting.max}
+                        reason={detailedResult.detailed.scoreBreakdown.components.fingerprinting.reason}
+                        colorScheme="purple"
+                        technicalDetails={{
+                          canvasFingerprinting: detailedResult.userFriendly.fingerprinting.canvasBlocked ? 'Blocked/Randomized' : 'Possible',
+                          webglFingerprinting: detailedResult.userFriendly.fingerprinting.webglBlocked ? 'Blocked' : 'Exposed',
+                          fontsDetected: `${detailedResult.userFriendly.fingerprinting.fontsDetected.length} fonts`,
+                          pluginsDetected: `${detailedResult.userFriendly.fingerprinting.pluginsDetected.length} plugins`,
+                          audioFingerprint: detailedResult.userFriendly.fingerprinting.audioFingerprint ? 'Generated' : 'Blocked/Null',
+                          uniquenessScore: `${detailedResult.userFriendly.fingerprinting.uniquenessScore}% unique`,
+                          privacyToolSignatures: detailedResult.detailed.fingerprinting.privacyToolSignatures || []
+                        }}
+                      />
 
                       {/* Hardware Score */}
-                      <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <span className="text-2xl mr-3">🖥️</span>
-                            <div>
-                              <h4 className="font-semibold text-gray-900">Hardware</h4>
-                              <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.hardware.score}/{detailedResult.detailed.scoreBreakdown.components.hardware.max} points</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-2xl font-bold text-orange-600">
-                              {Math.round((detailedResult.detailed.scoreBreakdown.components.hardware.score / detailedResult.detailed.scoreBreakdown.components.hardware.max) * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="w-full bg-orange-200 rounded-full h-2 mb-2">
-                          <div 
-                            className="bg-orange-600 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.hardware.score / detailedResult.detailed.scoreBreakdown.components.hardware.max) * 100}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.hardware.reason}</p>
-                      </div>
+                      <PrivacyScoreCard
+                        title="Hardware"
+                        icon="🖥️"
+                        score={detailedResult.detailed.scoreBreakdown.components.hardware.score}
+                        maxScore={detailedResult.detailed.scoreBreakdown.components.hardware.max}
+                        reason={detailedResult.detailed.scoreBreakdown.components.hardware.reason}
+                        colorScheme="orange"
+                        technicalDetails={{
+                          cpuCores: `${detailedResult.userFriendly.hardware.cpuCores} cores ${detailedResult.detailed.hardware.spoofingDetected?.cpuCores ? '(Spoofed)' : '(Exposed)'}`,
+                          deviceMemory: `${detailedResult.userFriendly.hardware.deviceMemory}GB ${detailedResult.detailed.hardware.spoofingDetected?.deviceMemory ? '(Spoofed)' : '(Exposed)'}`,
+                          screenResolution: `${detailedResult.userFriendly.hardware.screen.width}×${detailedResult.userFriendly.hardware.screen.height} ${detailedResult.detailed.hardware.spoofingDetected?.screenResolution ? '(Spoofed)' : '(Exposed)'}`,
+                          pixelRatio: `${detailedResult.userFriendly.hardware.screen.pixelRatio}x`,
+                          fingerprintingRisk: detailedResult.detailed.hardware.fingerprintingRisk || 'unknown'
+                        }}
+                      />
+
+                      {/* WebRTC Score */}
+                      {detailedResult.userFriendly.webrtc && (
+                        <PrivacyScoreCard
+                          title="WebRTC Leaks"
+                          icon="🌐"
+                          score={detailedResult.userFriendly.webrtc.webrtcBlocked ? 20 : detailedResult.userFriendly.webrtc.hasIPLeak ? 0 : 15}
+                          maxScore={20}
+                          reason={detailedResult.userFriendly.webrtc.webrtcBlocked ? 'WebRTC blocked' : detailedResult.userFriendly.webrtc.hasIPLeak ? 'IP leak detected' : 'No IP leaks'}
+                          colorScheme="red"
+                          technicalDetails={{
+                            webrtcSupported: detailedResult.userFriendly.webrtc.webrtcSupported ? 'Yes' : 'No',
+                            webrtcBlocked: detailedResult.userFriendly.webrtc.webrtcBlocked ? 'Yes' : 'No',
+                            localIPs: detailedResult.userFriendly.webrtc.localIPs.length > 0 ? detailedResult.userFriendly.webrtc.localIPs.join(', ') : 'None detected',
+                            publicIPs: detailedResult.userFriendly.webrtc.publicIPs.length > 0 ? detailedResult.userFriendly.webrtc.publicIPs.join(', ') : 'None detected',
+                            stunServers: detailedResult.userFriendly.webrtc.stunServersAccessible ? 'Accessible' : 'Blocked',
+                            protectionLevel: detailedResult.userFriendly.webrtc.protectionLevel
+                          }}
+                        />
+                      )}
+
+                      {/* Tracking Score */}
+                      {detailedResult.userFriendly.tracking && (
+                        <PrivacyScoreCard
+                          title="Active Tracking"
+                          icon="🕵️"
+                          score={detailedResult.userFriendly.tracking.trackingLevel === 'minimal' ? 15 : 
+                                 detailedResult.userFriendly.tracking.trackingLevel === 'moderate' ? 10 : 
+                                 detailedResult.userFriendly.tracking.trackingLevel === 'heavy' ? 5 : 0}
+                          maxScore={15}
+                          reason={`${detailedResult.userFriendly.tracking.totalTrackers} trackers detected (${detailedResult.userFriendly.tracking.trackingLevel})`}
+                          colorScheme="yellow"
+                          technicalDetails={{
+                            totalTrackers: detailedResult.userFriendly.tracking.totalTrackers.toString(),
+                            thirdPartyScripts: `${detailedResult.userFriendly.tracking.thirdPartyScripts.length} scripts`,
+                            trackingPixels: `${detailedResult.userFriendly.tracking.trackingPixels.length} pixels`,
+                            socialWidgets: `${detailedResult.userFriendly.tracking.socialWidgets.length} widgets`,
+                            fingerprinters: `${detailedResult.userFriendly.tracking.fingerprinters.length} fingerprinters`,
+                            trackingLevel: detailedResult.userFriendly.tracking.trackingLevel,
+                            detectedDomains: [
+                              ...detailedResult.userFriendly.tracking.thirdPartyScripts,
+                              ...detailedResult.userFriendly.tracking.trackingPixels,
+                              ...detailedResult.userFriendly.tracking.socialWidgets
+                            ].slice(0, 5)
+                          }}
+                        />
+                      )}
                     </div>
 
                     {/* Do Not Track Bonus */}
-                    <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <span className="text-2xl mr-3">🚫</span>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">Do Not Track</h4>
-                            <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.components.doNotTrack.score}/{detailedResult.detailed.scoreBreakdown.components.doNotTrack.max} points</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-2xl font-bold text-indigo-600">
-                            {Math.round((detailedResult.detailed.scoreBreakdown.components.doNotTrack.score / detailedResult.detailed.scoreBreakdown.components.doNotTrack.max) * 100)}%
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-indigo-200 rounded-full h-2 mt-3 mb-2">
-                        <div 
-                          className="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${(detailedResult.detailed.scoreBreakdown.components.doNotTrack.score / detailedResult.detailed.scoreBreakdown.components.doNotTrack.max) * 100}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-sm text-gray-700">{detailedResult.detailed.scoreBreakdown.components.doNotTrack.reason}</p>
-                    </div>
+                    <PrivacyScoreCard
+                      title="Do Not Track"
+                      icon="🚫"
+                      score={detailedResult.detailed.scoreBreakdown.components.doNotTrack.score}
+                      maxScore={detailedResult.detailed.scoreBreakdown.components.doNotTrack.max}
+                      reason={detailedResult.detailed.scoreBreakdown.components.doNotTrack.reason}
+                      colorScheme="indigo"
+                      technicalDetails={{
+                        dntHeader: detailedResult.userFriendly.browser.doNotTrack ? 'Sent' : 'Not sent',
+                        rawValue: detailedResult.rawData.navigatorObject.doNotTrack || 'null',
+                        browserSupport: 'Supported by most browsers',
+                        effectiveness: detailedResult.userFriendly.browser.name === 'Tor Browser' 
+                          ? 'Network-level anonymity provides superior protection'
+                          : 'Depends on website compliance',
+                        recommendation: detailedResult.userFriendly.browser.doNotTrack 
+                          ? 'DNT signal is being sent to websites'
+                          : 'Enable DNT in browser privacy settings'
+                      }}
+                      className="mb-6"
+                    />
 
                     {/* Total Score Summary */}
                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-lg p-6">
