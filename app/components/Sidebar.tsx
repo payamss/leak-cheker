@@ -17,7 +17,8 @@ import {
   FiFileText,
   FiChevronLeft,
   FiChevronRight,
-  FiZap
+  FiZap,
+  FiLock
 } from 'react-icons/fi';
 
 type NavItem = {
@@ -77,6 +78,13 @@ const navItems: NavItem[] = [
     href: '/cookie-tracker-test',
     icon: FiDatabase,
     description: 'Privacy & tracking analysis'
+  },
+  {
+    id: 'vpn-effectiveness',
+    label: 'VPN Effectiveness',
+    href: '/vpn-effectiveness',
+    icon: FiLock,
+    description: 'Comprehensive VPN security analysis'
   },
   {
     id: 'internet-speed-test',
