@@ -134,6 +134,28 @@ export class BrowserDetector {
       (window as any).doNotTrack ||
       (navigator as any).msDoNotTrack;
 
-    return dnt === '1' || dnt === 'yes';
+    // Standard DNT values
+    if (dnt === '1' || dnt === 'yes') {
+      return true;
+    }
+
+    // Special case: Tor Browser returns "unspecified" to avoid fingerprinting
+    // This should be considered as DNT enabled since Tor provides network-level protection
+    if (dnt === 'unspecified' && this.isTorBrowser()) {
+      return true;
+    }
+
+    // Check if we're likely in a privacy-focused browser that might spoof DNT
+    if (dnt === 'unspecified') {
+      // Tor Browser or other privacy browsers might return "unspecified"
+      const userAgent = navigator.userAgent.toLowerCase();
+      if (userAgent.includes('firefox') &&
+        (userAgent.includes('gecko') && !userAgent.includes('chrome'))) {
+        // Likely Tor Browser or hardened Firefox
+        return true;
+      }
+    }
+
+    return false;
   }
 } 
