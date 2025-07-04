@@ -325,12 +325,31 @@ const WebRTCLeakTest = () => {
                 {detectionState === 'detecting' ? (
                   <span className="text-blue-600">Detecting...</span>
                 ) : publicIPs.length > 0 ? (
-                  <span className="text-red-600 font-semibold">{publicIPs.join(', ')} ⚠️ LEAK DETECTED</span>
+                  <span className="text-red-600 font-semibold">{publicIPs.join(', ')} ⚠️ Leak Detected</span>
                 ) : (
                   <span className="text-green-600">✅ No public IP leak detected</span>
                 )}
               </span>
             </div>
+          </div>
+          {/* Explanation for public IPs and what counts as a leak */}
+          <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-blue-50 rounded-md text-xs sm:text-sm text-blue-900">
+            <strong>What does this mean?</strong><br />
+            {publicIPs.length > 0 ? (
+              <>
+                <span>
+                  If you are using a VPN and the public IP shown above matches your VPN-assigned IP address, this is <strong>not a leak</strong>—your VPN is working as expected.<br />
+                  <br />
+                  <span className="text-red-700 font-semibold">If the public IP matches your real (ISP-assigned) IP address, this <u>is a leak</u>—WebRTC is exposing your real IP, bypassing your VPN or proxy.</span><br />
+                  <br />
+                  <span className="text-gray-700">If you see only local/private IPs (like 192.168.x.x or 10.x.x.x), there is no leak.</span>
+                </span>
+              </>
+            ) : (
+              <span>
+                Only local/private IPs are visible. <strong>No public IP leak detected.</strong>
+              </span>
+            )}
           </div>
           {(localIPs.length > 0 || publicIPs.length > 0) && (
             <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-gray-50 rounded-md">
