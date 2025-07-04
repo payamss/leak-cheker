@@ -114,7 +114,7 @@ export default function CookieTrackerTestPage() {
       <div className="max-w-6xl mx-auto px-2 sm:px-4">
         <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
           {/* Header */}
-          <div className="text-center mb-4">
+          <div className="text-left mb-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               🔒 Advanced Privacy & Cookie Test
             </h1>
@@ -127,7 +127,7 @@ export default function CookieTrackerTestPage() {
                 including cookie policies, fingerprinting resistance, hardware exposure, WebRTC IP leaks, and real-time tracking detection.
               </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm">
                 <div>
                   <h3 className="font-semibold text-blue-900 mb-1">🍪 Cookie Analysis</h3>
                   <ul className="text-blue-700 space-y-0.5">

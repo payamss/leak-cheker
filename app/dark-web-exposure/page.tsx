@@ -366,8 +366,8 @@ const DarkWebExposureTest = () => {
 
   if (!isClient) {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+      <div className="min-h-screen bg-gray-50 py-4">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6 text-center">
           Dark Web Exposure Test
         </h2>
         <p>Loading...</p>
@@ -379,9 +379,9 @@ const DarkWebExposureTest = () => {
   const detectedThreats = getDetectedThreats();
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center">
-        <FiShield className="w-8 h-8 mr-3" />
+    <div className="max-w-7xl mx-auto px-2 sm:px-4">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6 text-center flex items-center justify-center">
+        <FiShield className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3" />
         Dark Web Exposure Test
       </h2>
 
@@ -390,12 +390,12 @@ const DarkWebExposureTest = () => {
 
       {/* IP Information */}
       {ipInfo && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <FiEye className="w-5 h-5 mr-2" />
+        <div className="bg-white p-3 sm:p-5 rounded-lg shadow-md mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4 flex items-center">
+            <FiEye className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Your IP Information
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-base">
             <div>
               <strong>IP Address:</strong> <span className="text-blue-600">{ipInfo.ip}</span>
             </div>
@@ -420,24 +420,23 @@ const DarkWebExposureTest = () => {
 
       {/* Overall Risk Assessment */}
       {scanComplete && (
-        <div className={`p-6 rounded-lg shadow-md mb-6 ${overallRiskInfo.bg}`}>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <overallRiskInfo.icon className={`w-6 h-6 mr-2 ${overallRiskInfo.color}`} />
+        <div className={`p-3 sm:p-5 rounded-lg shadow-md mb-4 sm:mb-6 ${overallRiskInfo.bg}`}> 
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4 flex items-center">
+            <overallRiskInfo.icon className={`w-5 h-5 sm:w-6 sm:h-6 mr-2 ${overallRiskInfo.color}`} />
             Overall Risk Assessment: <span className={overallRiskInfo.color}>{overallRiskInfo.text}</span>
           </h3>
-          
           {overallRisk === 'clean' ? (
-            <p className="text-gray-700">
+            <p className="text-xs sm:text-base text-gray-700">
               Great news! Your IP address was not found in any known threat databases or dark web exposure lists.
             </p>
           ) : (
             <div>
-              <p className="text-gray-700 mb-3">
+              <p className="text-xs sm:text-base text-gray-700 mb-2 sm:mb-3">
                 Your IP address has been flagged in one or more threat intelligence databases.
               </p>
-              <div className="bg-white p-4 rounded-md">
-                <h4 className="font-semibold text-gray-800 mb-2">Immediate Actions:</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+              <div className="bg-white p-2 sm:p-4 rounded-md">
+                <h4 className="font-semibold text-gray-800 mb-1 sm:mb-2">Immediate Actions:</h4>
+                <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm text-gray-700">
                   <li>Change your router&apos;s public IP by restarting your modem</li>
                   <li>Run a full system malware scan</li>
                   <li>Check for compromised devices on your network</li>
@@ -452,47 +451,41 @@ const DarkWebExposureTest = () => {
 
       {/* Threat Category Explanations */}
       {detectedThreats.length > 0 && (
-        <div className="bg-red-50 border border-red-200 p-6 rounded-lg shadow-md mb-6">
-          <h3 className="text-xl font-semibold text-red-800 mb-4 flex items-center">
-            <FiAlertTriangle className="w-6 h-6 mr-2" />
+        <div className="bg-red-50 border border-red-200 p-3 sm:p-5 rounded-lg shadow-md mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-red-800 mb-2 sm:mb-4 flex items-center">
+            <FiAlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
             Detected Threat Categories - What This Means
           </h3>
-          
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {detectedThreats.map((category, index) => {
               const info = threatCategoryInfo[category as keyof typeof threatCategoryInfo];
               if (!info) return null;
-              
               return (
-                <div key={index} className="bg-white p-4 rounded-lg border border-red-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-lg font-semibold text-red-700 flex items-center">
-                      <FiAlertTriangle className="w-5 h-5 mr-2" />
+                <div key={index} className="bg-white p-2 sm:p-4 rounded-lg border border-red-200">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <h4 className="text-base sm:text-lg font-semibold text-red-700 flex items-center">
+                      <FiAlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       {info.title}
                     </h4>
-                    <span className="px-3 py-1 bg-red-100 text-red-800 text-sm rounded-full">
+                    <span className="px-2 sm:px-3 py-1 bg-red-100 text-red-800 text-xs sm:text-sm rounded-full">
                       Severity: {info.severity}
                     </span>
                   </div>
-                  
-                  <p className="text-gray-700 mb-3">{info.description}</p>
-                  
-                  <div className="bg-gray-50 p-3 rounded-md mb-3">
-                    <h5 className="font-semibold text-gray-800 mb-2">What This Means:</h5>
-                    <p className="text-sm text-gray-700">{info.whatItMeans}</p>
+                  <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3">{info.description}</p>
+                  <div className="bg-gray-50 p-2 sm:p-3 rounded-md mb-2 sm:mb-3">
+                    <h5 className="font-semibold text-gray-800 mb-1 sm:mb-2">What This Means:</h5>
+                    <p className="text-xs sm:text-sm text-gray-700">{info.whatItMeans}</p>
                   </div>
-                  
-                  <div className="mb-3">
-                    <h5 className="font-semibold text-gray-800 mb-2">Immediate Actions Required:</h5>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                  <div className="mb-2 sm:mb-3">
+                    <h5 className="font-semibold text-gray-800 mb-1 sm:mb-2">Immediate Actions Required:</h5>
+                    <ul className="list-disc list-inside space-y-1 text-xs sm:text-sm text-gray-700">
                       {info.immediateActions.map((action, idx) => (
                         <li key={idx}>{action}</li>
                       ))}
                     </ul>
                   </div>
-                  
                   <div>
-                    <h5 className="font-semibold text-gray-800 mb-2">Learn More:</h5>
+                    <h5 className="font-semibold text-gray-800 mb-1 sm:mb-2">Learn More:</h5>
                     <div className="flex flex-wrap gap-2">
                       {info.learnMoreLinks.map((link, idx) => (
                         <a
@@ -500,7 +493,7 @@ const DarkWebExposureTest = () => {
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200 transition-colors"
+                          className="inline-flex items-center px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 text-xs sm:text-sm rounded-md hover:bg-blue-200 transition-colors"
                         >
                           {link.title}
                           <FiExternalLink className="w-3 h-3 ml-1" />
@@ -516,23 +509,22 @@ const DarkWebExposureTest = () => {
       )}
 
       {/* Scan Control */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6 text-center">
+      <div className="bg-white p-3 sm:p-5 rounded-lg shadow-md mb-4 sm:mb-6 text-center">
         {!isScanning && !scanComplete && (
           <button
             onClick={startScan}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center mx-auto"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg flex items-center mx-auto text-sm sm:text-base"
           >
-            <FiShield className="w-5 h-5 mr-2" />
+            <FiShield className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Start Dark Web Exposure Scan
           </button>
         )}
-        
         {error && (
-          <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-red-100 border border-red-400 text-red-700 rounded text-xs sm:text-base">
             Error: {error}
             <button
               onClick={startScan}
-              className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+              className="ml-2 sm:ml-4 bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-1 sm:py-2 rounded"
             >
               Retry Scan
             </button>
@@ -542,41 +534,39 @@ const DarkWebExposureTest = () => {
 
       {/* Threat Database Results */}
       {threatResults.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <FiLock className="w-5 h-5 mr-2" />
+        <div className="bg-white p-3 sm:p-5 rounded-lg shadow-md">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-4 flex items-center">
+            <FiLock className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Threat Intelligence Results
           </h3>
-          
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {threatResults.map((result, index) => {
               const riskInfo = getRiskInfo(result.threat_level);
               const isExpanded = expandedThreat === index;
               const hasThreatInfo = result.status === 'flagged' && result.categories && result.categories.length > 0;
-              
               return (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
+                <div key={index} className="p-2 sm:p-4 border rounded-lg">
+                  <div className="flex items-center justify-between mb-1 sm:mb-2">
                     <div className="flex items-center space-x-2">
-                      <h4 className="font-semibold text-gray-800">{result.source}</h4>
+                      <h4 className="font-semibold text-gray-800 text-xs sm:text-base">{result.source}</h4>
                       {hasThreatInfo && (
                         <button
                           onClick={() => setExpandedThreat(isExpanded ? null : index)}
                           className="text-blue-600 hover:text-blue-800 transition-colors"
                           title="View detailed threat information"
                         >
-                          <FiHelpCircle className="w-4 h-4" />
+                          <FiHelpCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       )}
                     </div>
                     <div className="flex items-center space-x-2">
                       {result.status === 'checking' ? (
                         <div className="flex items-center">
-                          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                          <span className="text-blue-600 text-sm">Scanning...</span>
+                          <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-1 sm:mr-2"></div>
+                          <span className="text-blue-600 text-xs sm:text-sm">Scanning...</span>
                         </div>
                       ) : (
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${riskInfo.bg} ${riskInfo.color}`}>
+                        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${riskInfo.bg} ${riskInfo.color}`}>
                           {result.status === 'error' ? 'Error' : riskInfo.text}
                         </span>
                       )}
@@ -585,28 +575,24 @@ const DarkWebExposureTest = () => {
                           onClick={() => setExpandedThreat(isExpanded ? null : index)}
                           className="text-gray-500 hover:text-gray-700 transition-colors"
                         >
-                          {isExpanded ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
+                          {isExpanded ? <FiChevronUp className="w-3 h-3 sm:w-4 sm:h-4" /> : <FiChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />}
                         </button>
                       )}
                     </div>
                   </div>
-                  
-                  <p className="text-sm text-gray-600 mb-2">{result.details}</p>
-                  
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{result.details}</p>
                   {result.confidence && (
                     <div className="text-xs text-gray-500">
                       Confidence: {result.confidence}%
                     </div>
                   )}
-                  
                   {result.last_seen && (
                     <div className="text-xs text-gray-500">
                       Last seen: {result.last_seen}
                     </div>
                   )}
-                  
                   {result.categories && (
-                    <div className="mt-2">
+                    <div className="mt-1 sm:mt-2">
                       {result.categories.map((category, idx) => (
                         <span key={idx} className="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded mr-2">
                           {category}
@@ -614,24 +600,20 @@ const DarkWebExposureTest = () => {
                       ))}
                     </div>
                   )}
-
                   {/* Expanded Threat Information */}
                   {isExpanded && hasThreatInfo && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-                      <h5 className="font-semibold text-gray-800 mb-3 flex items-center">
-                        <FiInfo className="w-4 h-4 mr-2" />
+                    <div className="mt-2 sm:mt-4 p-2 sm:p-4 bg-gray-50 rounded-lg border">
+                      <h5 className="font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center">
+                        <FiInfo className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                         What {result.source} Found:
                       </h5>
-                      
                       {result.categories?.map((category, idx) => {
                         const info = threatCategoryInfo[category as keyof typeof threatCategoryInfo];
                         if (!info) return null;
-                        
                         return (
-                          <div key={idx} className="mb-4 last:mb-0">
+                          <div key={idx} className="mb-2 sm:mb-4 last:mb-0">
                             <h6 className="font-medium text-gray-700 mb-1">{info.title}</h6>
-                            <p className="text-sm text-gray-600 mb-2">{info.description}</p>
-                            
+                            <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{info.description}</p>
                             <div className="text-xs space-y-1">
                               <div className="flex flex-wrap gap-1">
                                 {info.learnMoreLinks.slice(0, 2).map((link, linkIdx) => (

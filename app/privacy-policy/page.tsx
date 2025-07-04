@@ -110,10 +110,10 @@ We carefully select trusted third-party services and do not share personal infor
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-3xl mx-auto px-4 py-4">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
+        <div className="text-center mb-4">
+          <div className="flex justify-center mb-4">
             <div className="p-4 bg-blue-600 rounded-full shadow-lg">
               <FiShield className="w-8 h-8 text-white" />
             </div>
@@ -126,7 +126,7 @@ We carefully select trusted third-party services and do not share personal infor
         </div>
 
         {/* Introduction */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+        <div className="bg-white rounded-xl shadow-lg p-4 py-6 mb-4">
           <div className="flex items-start mb-6">
             <div className="p-2 bg-blue-100 rounded-lg mr-4">
               <FiLock className="w-6 h-6 text-blue-600" />
@@ -144,7 +144,7 @@ We carefully select trusted third-party services and do not share personal infor
         </div>
 
         {/* Policy Sections */}
-        <div className="space-y-8">
+        <div className="space-y-4">
           {sections.map((section) => {
             const Icon = section.icon;
             return (
@@ -202,7 +202,7 @@ We carefully select trusted third-party services and do not share personal infor
         </div>
 
         {/* GDPR & Legal Compliance */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-8 mt-8">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 py-6 sm:p-6 mt-4">
           <h2 className="text-2xl font-bold text-blue-900 mb-4">Legal Compliance</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
@@ -223,7 +223,7 @@ We carefully select trusted third-party services and do not share personal infor
         </div>
 
         {/* Contact Information */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mt-8">
+        <div className="bg-white rounded-xl shadow-lg p-4 py-6 sm:p-6 mt-4">
           <div className="flex items-center mb-6">
             <div className="p-3 bg-green-100 rounded-lg mr-4">
               <FiMail className="w-6 h-6 text-green-600" />
@@ -255,7 +255,7 @@ We carefully select trusted third-party services and do not share personal infor
         </div>
 
         {/* Updates Notice */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mt-8">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 py-6 sm:p-6 mt-4">
           <h3 className="font-semibold text-yellow-800 mb-2">Policy Updates</h3>
           <p className="text-yellow-700 text-sm">
             We may update this Privacy Policy from time to time to reflect changes in our 
