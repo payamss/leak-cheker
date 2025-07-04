@@ -58,51 +58,50 @@ export default function VPNEffectivenessDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-4">
+          <div className="text-center mb-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               🛡️ VPN Effectiveness Dashboard
             </h1>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-blue-900 mb-3">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+              <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
                 Comprehensive VPN Security Assessment
               </h2>
-              <p className="text-blue-800 mb-4">
+              <p className="text-blue-800 mb-3 text-sm sm:text-base">
                 Evaluate your VPN&apos;s effectiveness across multiple security dimensions including IP protection, 
                 DNS leak prevention, location privacy, and advanced privacy features.
               </p>
-              
-              <div className="grid md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm">
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">🔒 IP Protection</h3>
-                  <ul className="text-blue-700 space-y-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">🔒 IP Protection</h3>
+                  <ul className="text-blue-700 space-y-0.5">
                     <li>• WebRTC leak detection</li>
                     <li>• Public IP masking</li>
                     <li>• IPv6 leak prevention</li>
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">🌐 DNS Security</h3>
-                  <ul className="text-blue-700 space-y-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">🌐 DNS Security</h3>
+                  <ul className="text-blue-700 space-y-0.5">
                     <li>• DNS leak testing</li>
                     <li>• DNS over HTTPS</li>
                     <li>• Server verification</li>
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">📍 Location Privacy</h3>
-                  <ul className="text-blue-700 space-y-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">📍 Location Privacy</h3>
+                  <ul className="text-blue-700 space-y-0.5">
                     <li>• Geolocation blocking</li>
                     <li>• Timezone consistency</li>
                     <li>• Location spoofing</li>
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">🔐 Advanced Privacy</h3>
-                  <ul className="text-blue-700 space-y-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">🔐 Advanced Privacy</h3>
+                  <ul className="text-blue-700 space-y-0.5">
                     <li>• Fingerprint protection</li>
                     <li>• Tracking prevention</li>
                     <li>• Browser security</li>
@@ -114,45 +113,44 @@ export default function VPNEffectivenessDashboard() {
 
           {/* Overall Score */}
           {result && (
-            <div className={`rounded-lg border-2 p-6 ${getStatusColor(result.vpnStatus)}`}>
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">VPN Effectiveness Score</h2>
-                  <div className="text-5xl font-bold mb-2">
+            <div className={`rounded-lg border-2 p-3 sm:p-4 ${getStatusColor(result.vpnStatus)}`}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+                <div className="mb-3 sm:mb-0">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">VPN Effectiveness Score</h2>
+                  <div className="text-3xl sm:text-5xl font-bold mb-1">
                     {Math.round((result.overallScore / result.maxPossibleScore) * 100)}%
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="text-2xl font-bold">{result.overallGrade}</span>
-                    <span className="text-lg capitalize">{result.vpnStatus} Protection</span>
+                  <div className="flex items-center space-x-2 sm:space-x-4">
+                    <span className="text-xl sm:text-2xl font-bold">{result.overallGrade}</span>
+                    <span className="text-base sm:text-lg capitalize">{result.vpnStatus} Protection</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="mb-4">
-                    <span className="text-sm text-gray-600">Tests Passed: </span>
+                <div className="text-left sm:text-right w-full sm:w-auto">
+                  <div className="mb-2 sm:mb-4">
+                    <span className="text-xs sm:text-sm text-gray-600">Tests Passed: </span>
                     <span className="font-semibold text-green-600">{result.summary.testsPassed}</span>
                     <span className="text-gray-600"> / </span>
                     <span className="font-semibold">{result.summary.totalTests}</span>
                   </div>
                   {result.summary.criticalIssues > 0 && (
-                    <div className="mb-4">
-                      <span className="text-sm text-red-600">Critical Issues: </span>
+                    <div className="mb-2 sm:mb-4">
+                      <span className="text-xs sm:text-sm text-red-600">Critical Issues: </span>
                       <span className="font-semibold text-red-700">{result.summary.criticalIssues}</span>
                     </div>
                   )}
                   <button
                     onClick={runVPNTest}
                     disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium disabled:opacity-50"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded font-medium disabled:opacity-50 text-sm sm:text-base"
                   >
                     {isLoading ? 'Testing...' : '🔄 Run Test Again'}
                   </button>
                 </div>
               </div>
-              
               {/* Progress Bar */}
-              <div className="w-full bg-gray-300 rounded-full h-4">
+              <div className="w-full bg-gray-300 rounded-full h-3 sm:h-4">
                 <div 
-                  className={`h-4 rounded-full transition-all duration-500 ${
+                  className={`h-3 sm:h-4 rounded-full transition-all duration-500 ${
                     result.vpnStatus === 'excellent' ? 'bg-green-500' :
                     result.vpnStatus === 'good' ? 'bg-blue-500' :
                     result.vpnStatus === 'poor' ? 'bg-yellow-500' : 'bg-red-500'
@@ -192,10 +190,10 @@ export default function VPNEffectivenessDashboard() {
 
         {/* Results Tabs */}
         {result && (
-          <div className="space-y-6">
+          <div className="space-y-3 sm:space-y-4">
             {/* Tab Navigation */}
             <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
+              <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
                 {[
                   { id: 'overview', label: '📊 Overview' },
                   { id: 'categories', label: '🔍 Test Categories' },
@@ -204,7 +202,7 @@ export default function VPNEffectivenessDashboard() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as 'overview' | 'categories' | 'recommendations')}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    className={`py-2 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -218,29 +216,19 @@ export default function VPNEffectivenessDashboard() {
 
             {/* Tab Content */}
             {activeTab === 'overview' && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* Category Overview Cards */}
                 {Object.entries(result.categories).map(([key, category]) => {
                   const percentage = Math.round((category.categoryScore / category.maxCategoryScore) * 100);
                   const hasIssues = category.criticalIssues > 0;
-                  
                   return (
-                    <div key={key} className="bg-white border border-gray-200 rounded-lg p-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-semibold text-gray-900">{category.categoryName}</h3>
-                        <span className={`text-2xl font-bold ${hasIssues ? 'text-red-600' : percentage >= 80 ? 'text-green-600' : percentage >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                          {percentage}%
-                        </span>
+                    <div key={key} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-3">
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-2 sm:mb-0">{category.categoryName}</h3>
+                        <span className={`text-xl sm:text-2xl font-bold ${hasIssues ? 'text-red-600' : percentage >= 80 ? 'text-green-600' : percentage >= 60 ? 'text-yellow-600' : 'text-red-600'}`}> {percentage}% </span>
                       </div>
-                      
-                      <div className={`w-full rounded-full h-2 mb-3 ${hasIssues ? 'bg-red-200' : 'bg-gray-200'}`}>
-                        <div 
-                          className={`h-2 rounded-full ${hasIssues ? 'bg-red-500' : percentage >= 80 ? 'bg-green-500' : percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                      
-                      <div className="text-sm text-gray-600">
+                      <div className={`w-full rounded-full h-2 mb-2 sm:mb-3 ${hasIssues ? 'bg-red-200' : 'bg-gray-200'}`}> <div className={`h-2 rounded-full ${hasIssues ? 'bg-red-500' : percentage >= 80 ? 'bg-green-500' : percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percentage}%` }}></div> </div>
+                      <div className="text-xs sm:text-sm text-gray-600">
                         <p>{category.tests.filter(t => t.status === 'pass').length}/{category.tests.length} tests passed</p>
                         {category.criticalIssues > 0 && (
                           <p className="text-red-600 font-medium">{category.criticalIssues} critical issue(s)</p>
@@ -253,46 +241,33 @@ export default function VPNEffectivenessDashboard() {
             )}
 
             {activeTab === 'categories' && (
-              <div className="space-y-6">
+              <div className="space-y-3 sm:space-y-4">
                 {Object.entries(result.categories).map(([key, category]) => (
-                  <div key={key} className="bg-white border border-gray-200 rounded-lg p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-xl font-semibold text-gray-900">{category.categoryName}</h3>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-gray-700">
-                          {category.categoryScore}/{category.maxCategoryScore}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {Math.round((category.categoryScore / category.maxCategoryScore) * 100)}% effective
-                        </div>
+                  <div key={key} className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-4">
+                      <h3 className="text-base sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-0">{category.categoryName}</h3>
+                      <div className="text-left sm:text-right">
+                        <div className="text-xl sm:text-2xl font-bold text-gray-700"> {category.categoryScore}/{category.maxCategoryScore} </div>
+                        <div className="text-xs sm:text-sm text-gray-500"> {Math.round((category.categoryScore / category.maxCategoryScore) * 100)}% effective </div>
                       </div>
                     </div>
-                    
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {category.tests.map((test, index) => (
-                        <div key={index} className={`border rounded-lg p-4 ${getTestStatusColor(test.status)}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center">
-                              <span className="text-xl mr-2">{getTestStatusIcon(test.status)}</span>
-                              <h4 className="font-medium">{test.testName}</h4>
+                        <div key={index} className={`border rounded-lg p-2 sm:p-4 ${getTestStatusColor(test.status)}`}>
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-1 sm:mb-2">
+                            <div className="flex items-center mb-1 sm:mb-0">
+                              <span className="text-lg sm:text-xl mr-1 sm:mr-2">{getTestStatusIcon(test.status)}</span>
+                              <h4 className="font-medium text-xs sm:text-base">{test.testName}</h4>
                               {test.critical && (
-                                <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                                  Critical
-                                </span>
+                                <span className="ml-1 sm:ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full"> Critical </span>
                               )}
                             </div>
-                            <span className="font-semibold">
-                              {test.score}/{test.maxScore}
-                            </span>
+                            <span className="font-semibold text-xs sm:text-base"> {test.score}/{test.maxScore} </span>
                           </div>
-                          
-                          <p className="text-sm mb-2">{test.description}</p>
-                          <p className="text-xs text-gray-600 mb-2">{test.details}</p>
-                          
+                          <p className="text-xs sm:text-sm mb-1 sm:mb-2">{test.description}</p>
+                          <p className="text-xs text-gray-600 mb-1 sm:mb-2">{test.details}</p>
                           {test.recommendation && (
-                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-                              <strong>Recommendation:</strong> {test.recommendation}
-                            </div>
+                            <div className="mt-1 sm:mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs sm:text-sm"> <strong>Recommendation:</strong> {test.recommendation} </div>
                           )}
                         </div>
                       ))}
@@ -303,19 +278,19 @@ export default function VPNEffectivenessDashboard() {
             )}
 
             {activeTab === 'recommendations' && (
-              <div className="space-y-6">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Immediate Actions */}
                 {result.recommendations.immediate.length > 0 && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-red-800 mb-4 flex items-center">
-                      <span className="text-2xl mr-2">🚨</span>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-red-800 mb-2 sm:mb-4 flex items-center">
+                      <span className="text-xl sm:text-2xl mr-1 sm:mr-2">🚨</span>
                       Immediate Actions Required
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1 sm:space-y-2">
                       {result.recommendations.immediate.map((rec, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="text-red-500 mr-2">•</span>
-                          <span className="text-red-700">{rec}</span>
+                          <span className="text-red-500 mr-1 sm:mr-2">•</span>
+                          <span className="text-red-700 text-xs sm:text-sm">{rec}</span>
                         </li>
                       ))}
                     </ul>
@@ -324,16 +299,16 @@ export default function VPNEffectivenessDashboard() {
 
                 {/* Important Improvements */}
                 {result.recommendations.important.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-yellow-800 mb-4 flex items-center">
-                      <span className="text-2xl mr-2">⚠️</span>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-yellow-800 mb-2 sm:mb-4 flex items-center">
+                      <span className="text-xl sm:text-2xl mr-1 sm:mr-2">⚠️</span>
                       Important Improvements
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1 sm:space-y-2">
                       {result.recommendations.important.map((rec, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="text-yellow-500 mr-2">•</span>
-                          <span className="text-yellow-700">{rec}</span>
+                          <span className="text-yellow-500 mr-1 sm:mr-2">•</span>
+                          <span className="text-yellow-700 text-xs sm:text-sm">{rec}</span>
                         </li>
                       ))}
                     </ul>
@@ -342,16 +317,16 @@ export default function VPNEffectivenessDashboard() {
 
                 {/* Suggested Enhancements */}
                 {result.recommendations.suggested.length > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center">
-                      <span className="text-2xl mr-2">💡</span>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-2 sm:mb-4 flex items-center">
+                      <span className="text-xl sm:text-2xl mr-1 sm:mr-2">💡</span>
                       Suggested Enhancements
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1 sm:space-y-2">
                       {result.recommendations.suggested.map((rec, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="text-blue-500 mr-2">•</span>
-                          <span className="text-blue-700">{rec}</span>
+                          <span className="text-blue-500 mr-1 sm:mr-2">•</span>
+                          <span className="text-blue-700 text-xs sm:text-sm">{rec}</span>
                         </li>
                       ))}
                     </ul>
@@ -359,21 +334,17 @@ export default function VPNEffectivenessDashboard() {
                 )}
 
                 {/* VPN Detection Info */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">🔍 VPN Detection Results</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 sm:mb-4">🔍 VPN Detection Results</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">VPN Status:</p>
-                      <p className={`font-medium ${result.metadata.vpnDetected ? 'text-green-600' : 'text-red-600'}`}>
-                        {result.metadata.vpnDetected ? '✅ VPN Detected' : '❌ No VPN Detected'}
-                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-1">VPN Status:</p>
+                      <p className={`font-medium ${result.metadata.vpnDetected ? 'text-green-600' : 'text-red-600'}`}> {result.metadata.vpnDetected ? '✅ VPN Detected' : '❌ No VPN Detected'} </p>
                     </div>
                     {result.metadata.estimatedLocation && (
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">Apparent Location:</p>
-                        <p className="font-medium text-gray-800">
-                          {result.metadata.estimatedLocation.city}, {result.metadata.estimatedLocation.country}
-                        </p>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1">Apparent Location:</p>
+                        <p className="font-medium text-gray-800 text-xs sm:text-sm"> {result.metadata.estimatedLocation.city}, {result.metadata.estimatedLocation.country} </p>
                       </div>
                     )}
                   </div>

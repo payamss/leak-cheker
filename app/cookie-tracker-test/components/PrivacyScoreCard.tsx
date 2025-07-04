@@ -111,38 +111,38 @@ export default function PrivacyScoreCard({
   };
 
   return (
-    <div className={`bg-gradient-to-r ${colors.bg} border ${colors.border} rounded-lg p-4 ${className}`}>
+    <div className={`bg-gradient-to-r ${colors.bg} border ${colors.border} rounded-lg p-2 sm:p-3 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center">
-          <span className="text-2xl mr-3">{icon}</span>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
+        <div className="flex items-center mb-2 sm:mb-0">
+          <span className="text-xl sm:text-2xl mr-2 sm:mr-3">{icon}</span>
           <div>
-            <h4 className="font-semibold text-gray-900">{title}</h4>
-            <p className="text-sm text-gray-600">{score}/{maxScore} points</p>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{title}</h4>
+            <p className="text-xs sm:text-sm text-gray-600">{score}/{maxScore} points</p>
           </div>
         </div>
-        <div className="text-right">
-          <span className={`text-2xl font-bold ${colors.text}`}>
+        <div className="text-left sm:text-right">
+          <span className={`text-xl sm:text-2xl font-bold ${colors.text}`}>
             {percentage}%
           </span>
         </div>
       </div>
 
       {/* Progress Bar */}
-      <div className={`w-full ${colors.progressBg} rounded-full h-2 mb-2`}>
+      <div className={`w-full ${colors.progressBg} rounded-full h-1.5 sm:h-2 mb-2`}>
         <div 
-          className={`${colors.progress} h-2 rounded-full transition-all duration-300`}
+          className={`${colors.progress} h-1.5 sm:h-2 rounded-full transition-all duration-300`}
           style={{ width: `${percentage}%` }}
         ></div>
       </div>
 
       {/* Basic Reason */}
-      <p className="text-sm text-gray-700 mb-3">{reason}</p>
+      <p className="text-xs sm:text-sm text-gray-700 mb-2">{reason}</p>
 
       {/* Expand/Collapse Button */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`text-sm font-medium ${colors.button} transition-colors duration-200 flex items-center`}
+        className={`text-xs sm:text-sm font-medium ${colors.button} transition-colors duration-200 flex items-center`}
       >
         {isExpanded ? '▼' : '▶'} 
         <span className="ml-1">
@@ -152,15 +152,15 @@ export default function PrivacyScoreCard({
 
       {/* Expanded Technical Details */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <h5 className="font-medium text-gray-900 mb-3">Technical Details</h5>
-          <div className="space-y-2">
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <h5 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Technical Details</h5>
+          <div className="space-y-1.5 sm:space-y-2">
             {Object.entries(technicalDetails).map(([key, value]) => (
               <div key={key} className="flex flex-col sm:flex-row sm:justify-between">
-                <span className="text-sm font-medium text-gray-600 mb-1 sm:mb-0">
+                <span className="text-xs sm:text-sm font-medium text-gray-600 mb-1 sm:mb-0">
                   {formatTechnicalKey(key)}:
                 </span>
-                <span className="text-sm text-gray-800 font-mono bg-white px-2 py-1 rounded border">
+                <span className="text-xs sm:text-sm text-gray-800 font-mono bg-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded border">
                   {formatTechnicalValue(key, value)}
                 </span>
               </div>
@@ -168,9 +168,9 @@ export default function PrivacyScoreCard({
           </div>
           
           {/* Additional Context */}
-          <div className="mt-4 p-3 bg-white bg-opacity-50 rounded border">
-            <h6 className="font-medium text-gray-900 mb-2">What This Means</h6>
-            <p className="text-sm text-gray-700">
+          <div className="mt-3 p-2 sm:p-3 bg-white bg-opacity-50 rounded border">
+            <h6 className="font-medium text-gray-900 mb-1.5 sm:mb-2 text-sm">What This Means</h6>
+            <p className="text-xs sm:text-sm text-gray-700">
               {getContextualExplanation(title)}
             </p>
           </div>

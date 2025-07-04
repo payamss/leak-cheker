@@ -110,27 +110,27 @@ export default function CookieTrackerTestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+    <div className="min-h-screen bg-gray-50 py-4">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4">
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               🔒 Advanced Privacy & Cookie Test
             </h1>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-              <h2 className="text-lg font-semibold text-blue-900 mb-3">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4">
+              <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
                 Comprehensive Privacy Analysis Suite
               </h2>
-              <p className="text-blue-800 mb-4">
-                Our advanced privacy testing suite performs deep analysis of your browser&apos;s privacy protection capabilities, 
+              <p className="text-blue-800 mb-3 text-sm sm:text-base">
+                Deep analysis of your browser&apos;s privacy protection capabilities, 
                 including cookie policies, fingerprinting resistance, hardware exposure, WebRTC IP leaks, and real-time tracking detection.
               </p>
               
-              <div className="grid md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm">
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">🍪 Cookie Analysis</h3>
-                  <ul className="text-blue-700 space-y-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">🍪 Cookie Analysis</h3>
+                  <ul className="text-blue-700 space-y-0.5">
                     <li>• Third-party cookies</li>
                     <li>• SameSite policies</li>
                     <li>• Storage capabilities</li>
@@ -138,8 +138,8 @@ export default function CookieTrackerTestPage() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">🎭 Fingerprinting</h3>
-                  <ul className="text-blue-700 space-y-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">🎭 Fingerprinting</h3>
+                  <ul className="text-blue-700 space-y-0.5">
                     <li>• Canvas fingerprinting</li>
                     <li>• WebGL analysis</li>
                     <li>• Font enumeration</li>
@@ -147,8 +147,8 @@ export default function CookieTrackerTestPage() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">🖥️ Hardware Exposure</h3>
-                  <ul className="text-blue-700 space-y-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">🖥️ Hardware Exposure</h3>
+                  <ul className="text-blue-700 space-y-0.5">
                     <li>• CPU cores detection</li>
                     <li>• Memory analysis</li>
                     <li>• Screen properties</li>
@@ -156,8 +156,8 @@ export default function CookieTrackerTestPage() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-2">📊 Professional Reports</h3>
-                  <ul className="text-blue-700 space-y-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">📊 Professional Reports</h3>
+                  <ul className="text-blue-700 space-y-0.5">
                     <li>• Executive summaries</li>
                     <li>• Technical details</li>
                     <li>• Export formats</li>
@@ -170,19 +170,19 @@ export default function CookieTrackerTestPage() {
 
           {/* Privacy Score Dashboard */}
           {detailedResult && (
-            <div className="mb-8">
-              <div className={`rounded-lg border-2 p-6 ${getScoreBgColor(detailedResult.userFriendly.privacyScore)}`}>
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Privacy Protection Score</h2>
-                    <div className={`text-5xl font-bold ${getScoreColor(detailedResult.userFriendly.privacyScore)} mb-2`}>
+            <div className="mb-4">
+              <div className={`rounded-lg border-2 p-3 sm:p-4 ${getScoreBgColor(detailedResult.userFriendly.privacyScore)}`}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+                  <div className="mb-3 sm:mb-0">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Privacy Protection Score</h2>
+                    <div className={`text-3xl sm:text-5xl font-bold ${getScoreColor(detailedResult.userFriendly.privacyScore)} mb-1`}>
                       {detailedResult.userFriendly.privacyScore}%
                     </div>
-                    <p className="text-gray-700">{technicalReport?.summary.riskLevel.toUpperCase()} Risk Level</p>
+                    <p className="text-gray-700 text-sm sm:text-base">{technicalReport?.summary.riskLevel.toUpperCase()} Risk Level</p>
                   </div>
-                  <div className="text-right">
-                    <div className="mb-4">
-                      <span className="text-sm text-gray-600">Tests Passed: </span>
+                  <div className="text-left sm:text-right w-full sm:w-auto">
+                    <div className="mb-2 sm:mb-4">
+                      <span className="text-xs sm:text-sm text-gray-600">Tests Passed: </span>
                       <span className="font-semibold text-green-600">{technicalReport?.summary.testsPassed}</span>
                       <span className="text-gray-600"> / </span>
                       <span className="font-semibold">{technicalReport?.summary.totalTests}</span>
@@ -191,7 +191,7 @@ export default function CookieTrackerTestPage() {
                       <button
                         onClick={runTest}
                         disabled={isLoading}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium disabled:opacity-50"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded font-medium disabled:opacity-50 text-sm sm:text-base"
                       >
                         {isLoading ? 'Testing...' : '🔄 Run Test Again'}
                       </button>
@@ -244,10 +244,10 @@ export default function CookieTrackerTestPage() {
 
           {/* Test Results Tabs */}
           {detailedResult && (
-            <div className="space-y-6">
+            <div className="space-y-3 sm:space-y-4">
               {/* Tab Navigation */}
               <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8">
+                <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
                   {[
                     { id: 'overview', label: '📊 Overview', count: null },
                     { id: 'technical', label: '🔬 Technical Details', count: null },
@@ -256,7 +256,7 @@ export default function CookieTrackerTestPage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as 'overview' | 'technical' | 'recommendations')}
-                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      className={`py-2 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                         activeTab === tab.id
                           ? 'border-blue-500 text-blue-600'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -264,7 +264,7 @@ export default function CookieTrackerTestPage() {
                     >
                       {tab.label}
                       {tab.count && (
-                        <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
+                        <span className="ml-1 sm:ml-2 bg-gray-100 text-gray-900 py-0.5 px-1.5 sm:px-2 rounded-full text-xs">
                           {tab.count}
                         </span>
                       )}
@@ -274,12 +274,12 @@ export default function CookieTrackerTestPage() {
               </div>
 
               {/* Export Options */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">📥 Export Report</h3>
+              <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
+                <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">📥 Export Report</h3>
                 <div className="flex flex-wrap gap-2 items-center">
                   <button
                     onClick={() => setShowRawJson(!showRawJson)}
-                    className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                    className="bg-white border border-gray-300 hover:bg-gray-50 px-2 py-1 rounded text-xs sm:text-sm font-medium"
                   >
                     {showRawJson ? 'Hide JSON' : 'Copy JSON'}
                   </button>
@@ -287,18 +287,18 @@ export default function CookieTrackerTestPage() {
                     <>
                       <button
                         onClick={handleCopyJson}
-                        className="bg-blue-100 border border-blue-300 hover:bg-blue-200 px-3 py-1 rounded text-sm font-medium ml-2"
+                        className="bg-blue-100 border border-blue-300 hover:bg-blue-200 px-2 py-1 rounded text-xs sm:text-sm font-medium ml-2"
                       >
                         {jsonCopySuccess ? 'Copied!' : 'Copy to Clipboard'}
                       </button>
-                      <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto mt-2 max-h-96">
+                      <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto mt-2 max-h-48 sm:max-h-96">
                         {JSON.stringify(detailedResult, null, 2)}
                       </pre>
                     </>
                   )}
                     <button
                     onClick={() => exportReport('json')}
-                      className="bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded text-sm font-medium"
+                      className="bg-white border border-gray-300 hover:bg-gray-50 px-2 py-1 rounded text-xs sm:text-sm font-medium"
                     >
                     Export JSON
                     </button>
@@ -307,18 +307,18 @@ export default function CookieTrackerTestPage() {
 
               {/* Tab Content */}
               {activeTab === 'overview' && (
-                <div className="space-y-6">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Executive Summary */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Executive Summary</h3>
-                    <div className="prose text-gray-700">
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">📋 Executive Summary</h3>
+                    <div className="prose text-gray-700 text-sm sm:text-base">
                       {technicalReport?.summary.majorIssues.length === 0 ? (
                         <p className="text-green-700">
                           🎉 Excellent! Your browser configuration provides strong privacy protection with no major issues detected.
                         </p>
                       ) : (
                         <div>
-                          <p className="mb-3">
+                          <p className="mb-2 sm:mb-3">
                             Your privacy analysis revealed {technicalReport?.summary.majorIssues.length} area(s) for improvement:
                           </p>
                           <ul className="list-disc list-inside space-y-1">
@@ -332,12 +332,12 @@ export default function CookieTrackerTestPage() {
                   </div>
 
                   {/* Privacy Test Results Grid */}
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     {/* Third-Party Cookies */}
-                    <div className="bg-white border border-gray-200 rounded-lg p-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-lg font-semibold text-gray-900">🍪 Third-Party Cookies</h3>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-3">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-0">🍪 Third-Party Cookies</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
                           detailedResult.userFriendly.cookies.thirdPartyCookiesBlocked 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
@@ -345,12 +345,12 @@ export default function CookieTrackerTestPage() {
                           {detailedResult.userFriendly.cookies.thirdPartyCookiesBlocked ? '✅ BLOCKED' : '❌ ENABLED'}
                         </span>
                       </div>
-                      <p className="text-gray-700 mb-3">
+                      <p className="text-gray-700 mb-2 sm:mb-3 text-sm sm:text-base">
                         {detailedResult.userFriendly.cookies.thirdPartyCookiesBlocked 
                           ? 'Your browser effectively blocks third-party cookies, preventing cross-site tracking.' 
                           : 'Third-party cookies are enabled, allowing websites to track you across the internet.'}
                       </p>
-                      <div className="text-sm text-gray-600 space-y-1">
+                      <div className="text-xs sm:text-sm text-gray-600 space-y-0.5 sm:space-y-1">
                         <p>SameSite=None: {detailedResult.userFriendly.cookies.sameSiteNoneBlocked ? 'Blocked ✅' : 'Allowed ❌'}</p>
                         <p>SameSite=Lax: {detailedResult.userFriendly.cookies.sameSiteLaxBlocked ? 'Blocked ✅' : 'Allowed ⚠️'}</p>
                         <p>SameSite=Strict: {detailedResult.userFriendly.cookies.sameSiteStrictBlocked ? 'Blocked ⚠️' : 'Allowed ✅'}</p>
@@ -358,10 +358,10 @@ export default function CookieTrackerTestPage() {
                     </div>
 
                     {/* Canvas Fingerprinting */}
-                    <div className="bg-white border border-gray-200 rounded-lg p-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-lg font-semibold text-gray-900">🎭 Canvas Fingerprinting</h3>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-3">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-0">🎭 Canvas Fingerprinting</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
                           detailedResult.userFriendly.fingerprinting.canvasBlocked 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
@@ -369,22 +369,22 @@ export default function CookieTrackerTestPage() {
                           {detailedResult.userFriendly.fingerprinting.canvasBlocked ? '🛡️ BLOCKED' : '🎯 POSSIBLE'}
                         </span>
                       </div>
-                      <p className="text-gray-700 mb-3">
+                      <p className="text-gray-700 mb-2 sm:mb-3 text-sm sm:text-base">
                         {detailedResult.userFriendly.fingerprinting.canvasBlocked 
                           ? 'Canvas fingerprinting is blocked or randomized, protecting your identity.' 
                           : 'Canvas fingerprinting is possible, potentially creating a unique identifier.'}
                       </p>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-xs sm:text-sm text-gray-600 space-y-0.5">
                         <p>Blocking Method: {detailedResult.detailed.fingerprinting.testDetails.canvas.blockingMethod || 'None detected'}</p>
                         <p>Randomization: {detailedResult.detailed.fingerprinting.testDetails.canvas.randomizationDetected ? 'Active ✅' : 'None ❌'}</p>
                       </div>
                     </div>
 
                     {/* WebGL Fingerprinting */}
-                    <div className="bg-white border border-gray-200 rounded-lg p-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-lg font-semibold text-gray-900">🔮 WebGL Fingerprinting</h3>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 sm:mb-3">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-0">🔮 WebGL Fingerprinting</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
                           detailedResult.userFriendly.fingerprinting.webglBlocked 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
@@ -392,12 +392,12 @@ export default function CookieTrackerTestPage() {
                           {detailedResult.userFriendly.fingerprinting.webglBlocked ? '🔒 BLOCKED' : '🔓 POSSIBLE'}
                         </span>
                       </div>
-                      <p className="text-gray-700 mb-3">
+                      <p className="text-gray-700 mb-2 sm:mb-3 text-sm sm:text-base">
                         {detailedResult.userFriendly.fingerprinting.webglBlocked 
                           ? 'WebGL is disabled or blocked, preventing graphics card fingerprinting.' 
                           : 'WebGL is accessible, exposing detailed graphics hardware information.'}
                       </p>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-xs sm:text-sm text-gray-600 space-y-0.5">
                         <p>Context Available: {detailedResult.detailed.fingerprinting.testDetails.webgl.contextAvailable ? 'Yes ❌' : 'No ✅'}</p>
                         <p>Renderer: {detailedResult.detailed.fingerprinting.testDetails.webgl.renderer || 'Hidden ✅'}</p>
                         <p>Vendor: {detailedResult.detailed.fingerprinting.testDetails.webgl.vendor || 'Hidden ✅'}</p>
@@ -550,13 +550,13 @@ export default function CookieTrackerTestPage() {
               )}
 
               {activeTab === 'technical' && detailedResult && (
-                <div className="space-y-6">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Score Breakdown */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6">🎯 Privacy Score Breakdown</h3>
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">🎯 Privacy Score Breakdown</h3>
                     
                     {/* Component Cards Grid */}
-                    <div className="grid md:grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
                       {/* Browser Score */}
                       <PrivacyScoreCard
                         title="Browser"
@@ -707,24 +707,24 @@ export default function CookieTrackerTestPage() {
                     />
 
                     {/* Total Score Summary */}
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-lg p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center">
-                          <span className="text-3xl mr-4">🎯</span>
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4">
+                        <div className="flex items-center mb-2 sm:mb-0">
+                          <span className="text-2xl sm:text-3xl mr-3 sm:mr-4">🎯</span>
                           <div>
-                            <h4 className="text-xl font-bold text-gray-900">Total Privacy Score</h4>
-                            <p className="text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.total}/{detailedResult.detailed.scoreBreakdown.maxPossible} points</p>
+                            <h4 className="text-lg sm:text-xl font-bold text-gray-900">Total Privacy Score</h4>
+                            <p className="text-xs sm:text-sm text-gray-600">{detailedResult.detailed.scoreBreakdown.total}/{detailedResult.detailed.scoreBreakdown.maxPossible} points</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className={`text-4xl font-bold ${getScoreColor(detailedResult.detailed.scoreBreakdown.percentage)}`}>
+                        <div className="text-left sm:text-right">
+                          <span className={`text-3xl sm:text-4xl font-bold ${getScoreColor(detailedResult.detailed.scoreBreakdown.percentage)}`}>
                             {detailedResult.detailed.scoreBreakdown.percentage}%
                           </span>
                         </div>
                       </div>
-                      <div className="w-full bg-gray-300 rounded-full h-4">
+                      <div className="w-full bg-gray-300 rounded-full h-3 sm:h-4">
                         <div 
-                          className={`h-4 rounded-full transition-all duration-500 ${
+                          className={`h-3 sm:h-4 rounded-full transition-all duration-500 ${
                             detailedResult.detailed.scoreBreakdown.percentage >= 80 ? 'bg-green-500' :
                             detailedResult.detailed.scoreBreakdown.percentage >= 60 ? 'bg-yellow-500' :
                             detailedResult.detailed.scoreBreakdown.percentage >= 40 ? 'bg-orange-500' : 'bg-red-500'
