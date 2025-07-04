@@ -101,46 +101,50 @@ export default function DNSLeakTest() {
   const testDNSServers = async () => {
     setLoading(true);
     try {
-      const servers: DNSServer[] = [];
-      for (let i = 0; i < dnsTestEndpoints.length; i++) {
-        setCurrentTest(i + 1);
-        setCurrentLink(dnsTestEndpoints[i]);
-
+      // Map each endpoint to a fetch promise
+      const fetchPromises = dnsTestEndpoints.map(async (endpoint) => {
         try {
-          const data = await fetchDNSServers(dnsTestEndpoints[i]);
-
+          const data = await fetchDNSServers(endpoint);
           if (data && typeof data === 'object' && ('errorCode' in data || 'error' in data)) {
-            servers.push({
+            return {
               ip: 'Error',
               isp: data.error || data.errorCode || 'API Error',
               country: '-',
               region: '-',
               city: '-',
               version: '-',
-              link: dnsTestEndpoints[i],
-            });
+              link: endpoint,
+            };
           } else if (data) {
             const ipString = data.ip || data.query || data.ipAddress || data.ip_addr || data;
-            servers.push({
+            return {
               ip: ipString || 'N/A',
               isp: data.org || data.isp || 'Unknown ISP',
               country: data.country_name || data.country || 'Unknown',
               region: data.region || data.regionName || 'Unknown',
               city: data.city || 'Unknown',
               version: typeof ipString === 'string' && ipString.includes(':') ? 'IPv6' : 'IPv4',
-              link: dnsTestEndpoints[i],
-            });
+              link: endpoint,
+            };
           }
-
-          setDNSServers([...servers]);
+          return null;
         } catch (err) {
-          console.error(err);
-
+          return {
+            ip: 'Error',
+            isp: 'Fetch error',
+            country: '-',
+            region: '-',
+            city: '-',
+            version: '-',
+            link: endpoint,
+          };
         }
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
-      }
+      });
+
+      // Run all fetches in parallel
+      const results = await Promise.all(fetchPromises);
+      setDNSServers(results.filter((r): r is DNSServer => r !== null));
     } catch (err) {
-      console.error(err);
       setError('Failed to test DNS servers. Please try again.');
     } finally {
       setLoading(false);
