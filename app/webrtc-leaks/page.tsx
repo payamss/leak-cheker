@@ -245,11 +245,13 @@ const WebRTCLeakTest = () => {
 
   if (!isClient) {
     return (
-      <div className="p-6 bg-gray-100 rounded-lg shadow-md">
-        <h3 className="text-3xl font-bold text-blue-600 mb-6 flex items-center">
-          <FiServer className="w-6 h-6 mr-2" /> WebRTC Leak Test
-        </h3>
-        <p>Loading...</p>
+      <div className="min-h-screen bg-gray-50 py-4">
+        <div className="max-w-3xl mx-auto px-2 sm:px-4">
+          <h3 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-3 sm:mb-6 flex items-center">
+            <FiServer className="w-6 h-6 mr-2" /> WebRTC Leak Test
+          </h3>
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }
@@ -280,117 +282,116 @@ const WebRTCLeakTest = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-100 rounded-lg shadow-md space-y-4">
-      <h3 className="text-3xl font-bold text-blue-600 mb-6 flex items-center">
-        <FiServer className="w-6 h-6 mr-2" /> WebRTC Leak Test
-      </h3>
+    <div className="min-h-screen bg-gray-50 py-4">
+      <div className="max-w-3xl mx-auto px-2 sm:px-4 space-y-3 sm:space-y-4">
+        <h3 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-3 sm:mb-6 flex items-center">
+          <FiServer className="w-6 h-6 mr-2" /> WebRTC Leak Test
+        </h3>
 
-      {/* Expandable Info Box */}
-      <WebRTCLeakInfoBox />
+        {/* Expandable Info Box */}
+        <WebRTCLeakInfoBox />
 
-      {/* Detection Status */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <div className="flex items-center space-x-2 mb-2">
-          {getStatusIcon()}
-          <h4 className="text-lg font-semibold text-gray-700">Detection Status</h4>
-        </div>
-        <p className="text-sm text-gray-600">{getStatusText()}</p>
-        {detectionError && (
-          <p className="text-sm text-red-600 mt-2">Error: {detectionError}</p>
-        )}
-      </div>
-
-      {/* WebRTC IPs */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h4 className="text-lg font-semibold text-gray-700 mb-3">WebRTC IP Addresses</h4>
-        
-        <div className="space-y-2">
-          <div>
-            <strong className="text-gray-800">Local/Private IPs:</strong>
-            <span className="ml-2">
-              {detectionState === 'detecting' ? (
-                <span className="text-blue-600">Detecting...</span>
-              ) : localIPs.length > 0 ? (
-                <span className="text-green-600">{localIPs.join(', ')}</span>
-              ) : (
-                <span className="text-gray-500">None detected</span>
-              )}
-            </span>
+        {/* Detection Status */}
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow-md">
+          <div className="flex items-center space-x-2 mb-1 sm:mb-2">
+            {getStatusIcon()}
+            <h4 className="text-base sm:text-lg font-semibold text-gray-700">Detection Status</h4>
           </div>
-          
-          <div>
-            <strong className="text-gray-800">Public IPs:</strong>
-            <span className="ml-2">
-              {detectionState === 'detecting' ? (
-                <span className="text-blue-600">Detecting...</span>
-              ) : publicIPs.length > 0 ? (
-                <span className="text-red-600 font-semibold">{publicIPs.join(', ')} ⚠️ LEAK DETECTED</span>
-              ) : (
-                <span className="text-green-600">✅ No public IP leak detected</span>
-              )}
-            </span>
-          </div>
+          <p className="text-xs sm:text-sm text-gray-600">{getStatusText()}</p>
+          {detectionError && (
+            <p className="text-xs sm:text-sm text-red-600 mt-1 sm:mt-2">Error: {detectionError}</p>
+          )}
         </div>
 
-        {(localIPs.length > 0 || publicIPs.length > 0) && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-md">
-            <p className="text-sm text-gray-600">
-              <strong>Total IPs detected:</strong> {localIPs.length + publicIPs.length}
-            </p>
+        {/* WebRTC IPs */}
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow-md">
+          <h4 className="text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">WebRTC IP Addresses</h4>
+          <div className="space-y-1.5 sm:space-y-2">
+            <div>
+              <strong className="text-gray-800">Local/Private IPs:</strong>
+              <span className="ml-2">
+                {detectionState === 'detecting' ? (
+                  <span className="text-blue-600">Detecting...</span>
+                ) : localIPs.length > 0 ? (
+                  <span className="text-green-600">{localIPs.join(', ')}</span>
+                ) : (
+                  <span className="text-gray-500">None detected</span>
+                )}
+              </span>
+            </div>
+            <div>
+              <strong className="text-gray-800">Public IPs:</strong>
+              <span className="ml-2">
+                {detectionState === 'detecting' ? (
+                  <span className="text-blue-600">Detecting...</span>
+                ) : publicIPs.length > 0 ? (
+                  <span className="text-red-600 font-semibold">{publicIPs.join(', ')} ⚠️ LEAK DETECTED</span>
+                ) : (
+                  <span className="text-green-600">✅ No public IP leak detected</span>
+                )}
+              </span>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* SDP Log */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h4 className="text-lg font-semibold text-gray-700 mb-2">Session Description Protocol (SDP)</h4>
-        <div className="bg-gray-100 p-3 rounded-md max-h-40 overflow-y-auto">
-          <pre className="text-xs text-gray-600 whitespace-pre-wrap">
-            {sdpLog || 'Generating SDP...'}
-          </pre>
+          {(localIPs.length > 0 || publicIPs.length > 0) && (
+            <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-gray-50 rounded-md">
+              <p className="text-xs sm:text-sm text-gray-600">
+                <strong>Total IPs detected:</strong> {localIPs.length + publicIPs.length}
+              </p>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Media Devices */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h4 className="text-lg font-semibold text-gray-700 mb-3">Available Media Devices</h4>
-        {mediaDevices.length > 0 ? (
-          <div className="space-y-3">
-            {mediaDevices.map((device, index) => (
-              <div key={index} className="p-3 bg-gray-50 rounded-md">
-                <div className="flex items-center space-x-2">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                    {device.kind}
-                  </span>
-                  <strong className="text-gray-800">{device.label}</strong>
+        {/* SDP Log */}
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow-md">
+          <h4 className="text-base sm:text-lg font-semibold text-gray-700 mb-1 sm:mb-2">Session Description Protocol (SDP)</h4>
+          <div className="bg-gray-100 p-2 sm:p-3 rounded-md max-h-32 sm:max-h-40 overflow-y-auto">
+            <pre className="text-xs text-gray-600 whitespace-pre-wrap">
+              {sdpLog || 'Generating SDP...'}
+            </pre>
+          </div>
+        </div>
+
+        {/* Media Devices */}
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow-md">
+          <h4 className="text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Available Media Devices</h4>
+          {mediaDevices.length > 0 ? (
+            <div className="space-y-2 sm:space-y-3">
+              {mediaDevices.map((device, index) => (
+                <div key={index} className="p-2 sm:p-3 bg-gray-50 rounded-md">
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                      {device.kind}
+                    </span>
+                    <strong className="text-gray-800 text-xs sm:text-base">{device.label}</strong>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    <div>Device ID: {device.deviceId.substring(0, 20)}...</div>
+                    <div>Group ID: {device.groupId.substring(0, 20)}...</div>
+                  </div>
                 </div>
-                <div className="mt-1 text-xs text-gray-500">
-                  <div>Device ID: {device.deviceId.substring(0, 20)}...</div>
-                  <div>Group ID: {device.groupId.substring(0, 20)}...</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">No media devices detected</p>
-        )}
-      </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs sm:text-sm text-gray-500">No media devices detected</p>
+          )}
+        </div>
 
-      {/* Permissions */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <h4 className="text-lg font-semibold text-gray-700 mb-3">Media Permissions</h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span><strong>Audio Permission:</strong></span>
-            <span className={`px-3 py-1 rounded-full text-sm ${permissions.audio ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-              {permissions.audio ? '✅ Granted' : '❌ Denied'}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span><strong>Video Permission:</strong></span>
-            <span className={`px-3 py-1 rounded-full text-sm ${permissions.video ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-              {permissions.video ? '✅ Granted' : '❌ Denied'}
-            </span>
+        {/* Permissions */}
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow-md">
+          <h4 className="text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Media Permissions</h4>
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-base"><strong>Audio Permission:</strong></span>
+              <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm ${permissions.audio ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {permissions.audio ? '✅ Granted' : '❌ Denied'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs sm:text-base"><strong>Video Permission:</strong></span>
+              <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm ${permissions.video ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {permissions.video ? '✅ Granted' : '❌ Denied'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
