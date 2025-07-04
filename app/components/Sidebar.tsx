@@ -242,7 +242,7 @@ export default function Sidebar() {
           {!isCollapsed ? (
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-1">Security Suite</p>
-                              <p className="text-xs text-gray-500">v1.2.1</p>
+                              <p className="text-xs text-gray-500">v2.0.0 </p>
             </div>
           ) : (
             <div className="flex justify-center">
