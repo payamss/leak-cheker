@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { VPNEffectivenessService, type VPNEffectivenessResult } from '../../utils/vpn-effectiveness';
+import { fetchDNSServers } from '../../utils/dnsTestApi';
 
 const TABS = [
   { key: 'tech', label: 'Technical Data' },
@@ -19,6 +20,21 @@ const VPNEffectivenessPage = () => {
   const [testing, setTesting] = useState<'baseline' | 'vpn' | null>(null);
   const [progress, setProgress] = useState<number>(0);
 
+  const dnsTestEndpoints = [
+    'https://ipv4.icanhazip.com',
+    'https://ipv6.icanhazip.com',
+    'https://icanhazip.com',
+    'https://ipinfo.io/json',
+    'https://ifconfig.me/all.json',
+    'https://api.ip.sb/geoip',
+    'https://ipwhois.app/json/',
+    'https://api.ip.sb/geoip',
+    'https://ipwhois.app/json/',
+    'https://api.db-ip.com/v2/free/self',
+    'https://api.ipify.org?format=json',
+    'https://jsonip.com/',
+  ];
+
   // Run actual VPN effectiveness tests
   const runAllTests = async () => {
     setProgress(0);
@@ -26,8 +42,7 @@ const VPNEffectivenessPage = () => {
     
     setProgress(20);
     const testResult = await vpnService.runComprehensiveVPNTest();
-    setProgress(100);
-    
+    setProgress(40);
     // Get public IP address and details from ipwhois
     let ipData = {
       ip: 'Unknown',
@@ -64,11 +79,33 @@ const VPNEffectivenessPage = () => {
     } catch (error) {
       console.warn('Could not fetch IP:', error);
     }
-    
+    setProgress(60);
+    // Fetch DNS servers (parallel to DNS Leak Test logic)
+    let detectedDNSServers: string[] = [];
+    try {
+      const fetchPromises = dnsTestEndpoints.map(async (endpoint) => {
+        try {
+          const data = await fetchDNSServers(endpoint);
+          if (data && typeof data === 'object') {
+            // Try to extract IP from various possible fields
+            const ipString = data.ip || data.query || data.ipAddress || data.ip_addr || data;
+            return ipString || null;
+          }
+          return null;
+        } catch (err) {
+          return null;
+        }
+      });
+      const results = await Promise.all(fetchPromises);
+      detectedDNSServers = results.filter((ip): ip is string => !!ip && typeof ip === 'string');
+    } catch (err) {
+      console.warn('Failed to detect DNS servers:', err);
+    }
+    setProgress(80);
     // Extract the actual data for comparison
     const actualData = {
       ...ipData,
-      dns: [], // Will need to extract from DNS test details
+      dns: detectedDNSServers,
       geo: `${testResult.metadata?.estimatedLocation?.city || ''}, ${testResult.metadata?.estimatedLocation?.country || ''}`.trim().replace(/^,\s*/, '') || 'Unknown',
       sections: {
         ip: { 
@@ -97,6 +134,8 @@ const VPNEffectivenessPage = () => {
         }
       }
     };
+    
+    setProgress(100);
     
     return actualData;
   };
