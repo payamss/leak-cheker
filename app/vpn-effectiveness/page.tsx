@@ -102,35 +102,58 @@ const VPNEffectivenessPage = () => {
       console.warn('Failed to detect DNS servers:', err);
     }
     setProgress(80);
+    // Group subtests by category
+    const groupTestsByCategory = (tests: any[]) => {
+      const grouped: Record<string, any[]> = { ip: [], dns: [], location: [], advanced: [] };
+      tests.forEach(test => {
+        const name = test.testName.toLowerCase();
+        if (name.includes('webrtc') || name.includes('public ip') || name.includes('ipv6')) grouped.ip.push(test);
+        else if (name.includes('dns')) grouped.dns.push(test);
+        else if (name.includes('location')) grouped.location.push(test);
+        else grouped.advanced.push(test);
+      });
+      return grouped;
+    };
+    const allTests = [
+      ...(testResult.categories?.ipProtection?.tests || []),
+      ...(testResult.categories?.dnsProtection?.tests || []),
+      ...(testResult.categories?.locationPrivacy?.tests || []),
+      ...(testResult.categories?.advancedPrivacy?.tests || []),
+    ];
+    const grouped = groupTestsByCategory(allTests);
     // Extract the actual data for comparison
     const actualData = {
       ...ipData,
       dns: detectedDNSServers,
       geo: `${testResult.metadata?.estimatedLocation?.city || ''}, ${testResult.metadata?.estimatedLocation?.country || ''}`.trim().replace(/^,\s*/, '') || 'Unknown',
       sections: {
-        ip: { 
-          score: testResult.categories?.ipProtection?.categoryScore || 0, 
-          passed: testResult.categories?.ipProtection?.tests?.filter(t => t.status === 'pass').length || 0, 
-          total: testResult.categories?.ipProtection?.tests?.length || 3, 
-          issues: testResult.categories?.ipProtection?.tests?.filter(t => t.status === 'fail').map(t => t.description) || [] 
+        ip: {
+          score: testResult.categories?.ipProtection?.categoryScore || 0,
+          passed: testResult.categories?.ipProtection?.tests?.filter(t => t.status === 'pass').length || 0,
+          total: testResult.categories?.ipProtection?.tests?.length || 3,
+          issues: testResult.categories?.ipProtection?.tests?.filter(t => t.status === 'fail').map(t => t.description) || [],
+          tests: grouped.ip
         },
-        dns: { 
-          score: testResult.categories?.dnsProtection?.categoryScore || 0, 
-          passed: testResult.categories?.dnsProtection?.tests?.filter(t => t.status === 'pass').length || 0, 
-          total: testResult.categories?.dnsProtection?.tests?.length || 2, 
-          issues: testResult.categories?.dnsProtection?.tests?.filter(t => t.status === 'fail').map(t => t.description) || [] 
+        dns: {
+          score: testResult.categories?.dnsProtection?.categoryScore || 0,
+          passed: testResult.categories?.dnsProtection?.tests?.filter(t => t.status === 'pass').length || 0,
+          total: testResult.categories?.dnsProtection?.tests?.length || 2,
+          issues: testResult.categories?.dnsProtection?.tests?.filter(t => t.status === 'fail').map(t => t.description) || [],
+          tests: grouped.dns
         },
-        location: { 
-          score: testResult.categories?.locationPrivacy?.categoryScore || 0, 
-          passed: testResult.categories?.locationPrivacy?.tests?.filter(t => t.status === 'pass').length || 0, 
-          total: testResult.categories?.locationPrivacy?.tests?.length || 2, 
-          issues: testResult.categories?.locationPrivacy?.tests?.filter(t => t.status === 'fail').map(t => t.description) || [] 
+        location: {
+          score: testResult.categories?.locationPrivacy?.categoryScore || 0,
+          passed: testResult.categories?.locationPrivacy?.tests?.filter(t => t.status === 'pass').length || 0,
+          total: testResult.categories?.locationPrivacy?.tests?.length || 2,
+          issues: testResult.categories?.locationPrivacy?.tests?.filter(t => t.status === 'fail').map(t => t.description) || [],
+          tests: grouped.location
         },
-        advanced: { 
-          score: testResult.categories?.advancedPrivacy?.categoryScore || 0, 
-          passed: testResult.categories?.advancedPrivacy?.tests?.filter(t => t.status === 'pass').length || 0, 
-          total: testResult.categories?.advancedPrivacy?.tests?.length || 2, 
-          issues: testResult.categories?.advancedPrivacy?.tests?.filter(t => t.status === 'fail').map(t => t.description) || [] 
+        advanced: {
+          score: testResult.categories?.advancedPrivacy?.categoryScore || 0,
+          passed: testResult.categories?.advancedPrivacy?.tests?.filter(t => t.status === 'pass').length || 0,
+          total: testResult.categories?.advancedPrivacy?.tests?.length || 2,
+          issues: testResult.categories?.advancedPrivacy?.tests?.filter(t => t.status === 'fail').map(t => t.description) || [],
+          tests: grouped.advanced
         }
       }
     };
@@ -226,6 +249,60 @@ const VPNEffectivenessPage = () => {
     inconclusive: { text: 'Inconclusive', color: 'bg-yellow-100 text-yellow-700' }
   }[heuristicsStatus];
 
+  // Category explanations
+  const CATEGORY_EXPLANATIONS: Record<string, string> = {
+    ip: 'Checks if your real IP address is exposed (e.g., via WebRTC) or if your VPN is masking it.',
+    dns: 'Checks if your DNS queries are private or if your real DNS servers are exposed (DNS leak).',
+    location: 'Checks if your real location (country, city) can be determined despite VPN.',
+    advanced: 'Checks for advanced privacy issues (e.g., fingerprinting, tracking, etc.).',
+  };
+
+  // Verdict helpers
+  const getCategoryVerdict = (score: number, passed: number, total: number) => {
+    if (score >= 90 || passed === total) return { verdict: 'Protected', icon: '✔', color: 'text-green-700 bg-green-100 border-green-300' };
+    if (score >= 50 || passed > 0) return { verdict: 'Partially Protected', icon: '⚠️', color: 'text-yellow-700 bg-yellow-100 border-yellow-300' };
+    return { verdict: 'Not Protected', icon: '✗', color: 'text-red-700 bg-red-100 border-red-300' };
+  };
+
+  // Improved/Worse/No Change badge
+  const getChangeBadge = (baselineScore: number, vpnScore: number) => {
+    if (vpnScore > baselineScore) return <span className="ml-2 px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700 border border-green-300">↑ Improved</span>;
+    if (vpnScore < baselineScore) return <span className="ml-2 px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 border border-red-300">↓ Worse</span>;
+    return <span className="ml-2 px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300">No Change</span>;
+  };
+
+  // Key issue/success summary
+  const getSummary = (section: string, data: any) => {
+    if (!data) return null;
+    if (data.issues && data.issues.length > 0) {
+      return (
+        <div className="text-red-700 text-xs mt-1">
+          {data.issues.slice(0, 2).map((issue: string, i: number) => <div key={i}>• {issue}</div>)}
+        </div>
+      );
+    }
+    if (data.passed === data.total) {
+      return <div className="text-green-700 text-xs mt-1">All tests passed. No leaks or exposures detected.</div>;
+    }
+    if (data.passed > 0) {
+      return <div className="text-yellow-700 text-xs mt-1">Some tests passed, but some issues remain.</div>;
+    }
+    return <div className="text-gray-700 text-xs mt-1">No tests passed. High risk of exposure.</div>;
+  };
+
+  // Quick tip for failed/partial
+  const getQuickTip = (section: string, data: any) => {
+    if (!data) return null;
+    if (data.passed === data.total) return null;
+    const tips: Record<string, string> = {
+      ip: 'Tip: Enable WebRTC leak protection in your browser or VPN. See Suggestions.',
+      dns: 'Tip: Enable DNS leak protection in your VPN or use secure DNS servers. See Suggestions.',
+      location: 'Tip: Use a VPN server in a different country/city for better location privacy. See Suggestions.',
+      advanced: 'Tip: Enable all privacy features in your VPN and browser. See Suggestions.',
+    };
+    return <div className="text-blue-700 text-xs mt-1">{tips[section]}</div>;
+  };
+
   // Data comparison table
   const DataComparison = ({ baseline, vpn }: { baseline: any, vpn: any }) => {
     if (!baseline || typeof baseline !== 'object' || !('ip' in baseline)) {
@@ -280,50 +357,128 @@ const VPNEffectivenessPage = () => {
     );
   };
 
-  // Section comparison UI (updated to use sections from actual data)
-  const SectionComparison = ({ section, baseline, vpn }: { section: string, baseline: any, vpn: any }) => {
-    if (!baseline || typeof baseline !== 'object') {
-      return (
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-5 mb-4">
-          <h4 className="text-base sm:text-lg font-semibold text-blue-700 mb-2 capitalize">{section.replace(/_/g, ' ')} Protection</h4>
-          <div className="text-red-600">No baseline data for this section.</div>
-        </div>
-      );
-    }
+  // Expandable test result component
+  const ExpandableTestResult = ({ test, isBaseline }: { test: any, isBaseline: boolean }) => {
+    const [open, setOpen] = useState(false);
+    if (!test) return null;
+    const statusIcon = test.status === 'pass' ? '✔' : test.status === 'fail' ? '✗' : '⚠️';
+    const statusColor = test.status === 'pass' ? 'text-green-700' : test.status === 'fail' ? 'text-red-700' : 'text-yellow-700';
     return (
-      <div className="bg-white rounded-lg shadow-md p-3 sm:p-5 mb-4">
-        <h4 className="text-base sm:text-lg font-semibold text-blue-700 mb-2 capitalize">{section.replace(/_/g, ' ')} Protection</h4>
-        <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-          <div>
-            <div className="font-semibold text-gray-700">Baseline</div>
-            <div className="mb-1">Score: <span className="font-bold">{baseline.score ?? '—'}%</span></div>
-            <div className="mb-1">{baseline.passed ?? '—'}/{baseline.total ?? '—'} tests passed</div>
-            {Array.isArray(baseline.issues) && baseline.issues.length > 0 && (
-              <ul className="list-disc list-inside text-red-600">
-                {baseline.issues.map((issue: string, i: number) => <li key={i}>{issue}</li>)}
-              </ul>
+      <div className="mb-1 border rounded bg-gray-50">
+        <button
+          className="w-full flex items-center justify-between px-2 py-1 text-left focus:outline-none"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="flex items-center">
+            <span className={`mr-2 font-bold ${statusColor}`}>{statusIcon}</span>
+            <span className="font-semibold text-gray-800">{test.testName}</span>
+          </span>
+          <span className="text-xs text-gray-500">{open ? '▲' : '▼'}</span>
+        </button>
+        {open && (
+          <div className="px-3 pb-2 pt-1 text-xs text-gray-700">
+            <div className="mb-1"><span className="font-semibold">What it checks:</span> {test.description}</div>
+            <div className="mb-1"><span className="font-semibold">Result:</span> <span className={statusColor}>{test.status === 'pass' ? 'Passed' : test.status === 'fail' ? 'Failed' : 'Warning'}</span></div>
+            {test.details && <div className="mb-1"><span className="font-semibold">Details:</span> {test.details}</div>}
+            {test.status === 'fail' && test.recommendation && (
+              <div className="text-blue-700 mt-1">Tip: {test.recommendation}</div>
             )}
           </div>
-          <div>
-            <div className="font-semibold text-gray-700">VPN</div>
-            {vpn ? (
+        )}
+      </div>
+    );
+  };
+
+  // Section comparison UI (improved with explanation and expandable tests)
+  const SectionComparison = ({ section, baseline, vpn }: { section: string, baseline: any, vpn: any }) => {
+    const explanation = CATEGORY_EXPLANATIONS[section] || '';
+    const verdictBaseline = baseline ? getCategoryVerdict(baseline.score, baseline.passed, baseline.total) : null;
+    const verdictVPN = vpn ? getCategoryVerdict(vpn.score, vpn.passed, vpn.total) : null;
+    // Special handling for WebRTC leaks in IP Protection
+    const renderWebRTCLeak = (data: any, label: string) => {
+      if (!data || !data.details) return null;
+      if (data.details.includes('WebRTC leaked')) {
+        // Extract leaked IPs from details string
+        const match = data.details.match(/WebRTC leaked (\d+) IP address\(es\): (.+)/);
+        const ips = match && match[2] ? match[2].split(',').map((ip: string) => ip.trim()) : [];
+        return (
+          <div className="mt-1 text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">
+            <span className="font-semibold">{label} WebRTC Leak:</span><br />
+            {ips.length > 0 ? (
               <>
-                <div className="mb-1">Score: <span className="font-bold">{vpn.score ?? '—'}%</span></div>
-                <div className="mb-1">{vpn.passed ?? '—'}/{vpn.total ?? '—'} tests passed</div>
-                {Array.isArray(vpn.issues) && vpn.issues.length > 0 && (
-                  <ul className="list-disc list-inside text-red-600">
-                    {vpn.issues.map((issue: string, i: number) => <li key={i}>{issue}</li>)}
-                  </ul>
-                )}
-                <div className="mt-1 font-semibold">
-                  {typeof vpn.score === 'number' && typeof baseline.score === 'number' ? (
-                    vpn.score > baseline.score ? <span className="text-green-700">Improved</span>
-                      : vpn.score < baseline.score ? <span className="text-red-700">Worse</span>
-                      : <span className="text-gray-700">No Change</span>
-                  ) : null}
-                </div>
+                <span>Leaked IP{ips.length > 1 ? 's' : ''}: </span>
+                <span className="font-mono">{ips.join(', ')}</span>
               </>
-            ) : <span className="text-gray-500">Not tested</span>}
+            ) : (
+              <span>WebRTC leak detected, but no IPs parsed.</span>
+            )}
+          </div>
+        );
+      }
+      return null;
+    };
+    // Explanation for IP Protection
+    const ipProtectionExplanation = section === 'ip' ? (
+      <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900">
+        <b>What is IP Protection?</b><br />
+        This test checks if your real IP address is visible to websites, either directly or through browser features like WebRTC. <br />
+        <b>Baseline (VPN Off):</b> Your real IP is usually visible (not protected). This is your starting point for comparison.<br />
+        <b>VPN:</b> Your real IP should be hidden (protected). If it is still visible, your VPN or browser is leaking your IP.
+      </div>
+    ) : null;
+    // Get subtests for expandable display (if available)
+    const getSubtests = (data: any) => {
+      if (!data) return [];
+      if (Array.isArray(data.tests)) return data.tests;
+      if (Array.isArray(data.subtests)) return data.subtests;
+      return [];
+    };
+    // Try to get subtests from details (for IP, DNS, etc.)
+    // For now, fallback: if not available, show main test as one subtest
+    const baselineSubtests = getSubtests(baseline).length ? getSubtests(baseline) : baseline && baseline.tests ? baseline.tests : baseline ? [baseline] : [];
+    const vpnSubtests = getSubtests(vpn).length ? getSubtests(vpn) : vpn && vpn.tests ? vpn.tests : vpn ? [vpn] : [];
+    return (
+      <div className="bg-white rounded-lg shadow-md p-3 sm:p-5 mb-4 border border-gray-200">
+        {ipProtectionExplanation}
+        <div className="flex items-center mb-1">
+          <h4 className="text-base sm:text-lg font-semibold text-blue-700 mr-2 capitalize">{section.replace(/_/g, ' ')} Protection</h4>
+          {vpn && baseline && getChangeBadge(baseline.score, vpn.score)}
+        </div>
+        <div className="text-xs text-gray-600 mb-2">{explanation}</div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <div className="flex items-center mb-1">
+              <span className={`px-2 py-0.5 rounded text-xs font-semibold border mr-2 ${verdictBaseline?.color}`}>{verdictBaseline?.icon} {verdictBaseline?.verdict}</span>
+              <span className="font-semibold text-gray-700">Baseline</span>
+            </div>
+            <div className="mb-1">Score: <span className="font-bold">{baseline?.score ?? '—'}%</span></div>
+            <div className="mb-1">{baseline?.passed ?? '—'}/{baseline?.total ?? '—'} tests passed</div>
+            {getSummary(section, baseline)}
+            {getQuickTip(section, baseline)}
+            {section === 'ip' && renderWebRTCLeak(baseline, 'Baseline')}
+            {/* Expandable subtests */}
+            <div className="mt-2">
+              {baselineSubtests.map((test: any, i: number) => (
+                <ExpandableTestResult key={i} test={test} isBaseline={true} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center mb-1">
+              <span className={`px-2 py-0.5 rounded text-xs font-semibold border mr-2 ${verdictVPN?.color}`}>{verdictVPN?.icon} {verdictVPN?.verdict}</span>
+              <span className="font-semibold text-gray-700">VPN</span>
+            </div>
+            <div className="mb-1">Score: <span className="font-bold">{vpn?.score ?? '—'}%</span></div>
+            <div className="mb-1">{vpn?.passed ?? '—'}/{vpn?.total ?? '—'} tests passed</div>
+            {getSummary(section, vpn)}
+            {getQuickTip(section, vpn)}
+            {section === 'ip' && renderWebRTCLeak(vpn, 'VPN')}
+            {/* Expandable subtests */}
+            <div className="mt-2">
+              {vpnSubtests.map((test: any, i: number) => (
+                <ExpandableTestResult key={i} test={test} isBaseline={false} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
