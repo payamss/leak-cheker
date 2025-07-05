@@ -36,7 +36,6 @@ export default function RootLayout({
         <LayoutWrapper>
           <Sidebar />
           {children}
-          <Footer />
         </LayoutWrapper>
         <CookieConsent />
       </body>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext } from 'react';
+import Footer from '../main/Footer';
 
 interface SidebarContextType {
   isCollapsed: boolean;
@@ -30,6 +31,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
     return (
       <div className="lg:ml-64 min-h-screen flex flex-col">
         <main className="flex-grow p-4 lg:p-6">{children}</main>
+        <Footer />
       </div>
     );
   }
@@ -42,6 +44,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
         }`}
       >
         <main className="flex-grow p-4 lg:p-6">{children}</main>
+        <Footer />
       </div>
     </SidebarContext.Provider>
   );
