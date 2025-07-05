@@ -28,26 +28,48 @@ const VPNEffectivenessPage = () => {
     const testResult = await vpnService.runComprehensiveVPNTest();
     setProgress(100);
     
-    // Get public IP address separately
-    let publicIP = 'Unknown';
-    let ispInfo = 'Unknown';
+    // Get public IP address and details from ipwhois
+    let ipData = {
+      ip: 'Unknown',
+      org: 'Unknown',
+      isp: 'Unknown',
+      country: 'Unknown',
+      country_code: '',
+      region: 'Unknown',
+      city: 'Unknown',
+      asn: 'Unknown',
+      timezone: 'Unknown',
+      country_flag: '',
+      latitude: null,
+      longitude: null,
+    };
     try {
-      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      const ipResponse = await fetch('https://ipwhois.app/json/');
       if (!ipResponse.ok) throw new Error('Failed to fetch IP');
-      const ipData = await ipResponse.json();
-      publicIP = ipData.ip || 'Unknown';
-      ispInfo = ipData.org || 'Unknown';
+      const ipJson = await ipResponse.json();
+      ipData = {
+        ip: ipJson.ip || 'Unknown',
+        org: ipJson.org || 'Unknown',
+        isp: ipJson.isp || 'Unknown',
+        country: ipJson.country || 'Unknown',
+        country_code: ipJson.country_code || '',
+        region: ipJson.region || 'Unknown',
+        city: ipJson.city || 'Unknown',
+        asn: ipJson.asn || 'Unknown',
+        timezone: ipJson.timezone || 'Unknown',
+        country_flag: ipJson.country_flag || '',
+        latitude: ipJson.latitude ?? null,
+        longitude: ipJson.longitude ?? null,
+      };
     } catch (error) {
       console.warn('Could not fetch IP:', error);
     }
     
     // Extract the actual data for comparison
     const actualData = {
-      ip: publicIP,
+      ...ipData,
       dns: [], // Will need to extract from DNS test details
-      isp: ispInfo,
       geo: `${testResult.metadata?.estimatedLocation?.city || ''}, ${testResult.metadata?.estimatedLocation?.country || ''}`.trim().replace(/^,\s*/, '') || 'Unknown',
-      // Section scores based on actual test results
       sections: {
         ip: { 
           score: testResult.categories?.ipProtection?.categoryScore || 0, 
@@ -95,10 +117,6 @@ const VPNEffectivenessPage = () => {
     setVpnTest(result);
     setTesting(null);
   };
-
-  useEffect(() => {
-    runBaselineTest();
-  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('vpn_baseline');
@@ -179,6 +197,16 @@ const VPNEffectivenessPage = () => {
         </div>
       );
     }
+    const row = (label: string, b: any, v: any, changed: boolean, extra?: any) => (
+      <tr>
+        <td className="px-2 py-2 border-b font-medium">{label}</td>
+        <td className="px-2 py-2 border-b">{b ?? '—'}{extra?.bFlag}</td>
+        <td className="px-2 py-2 border-b">{v ?? '—'}{extra?.vFlag}</td>
+        <td className="px-2 py-2 border-b">
+          {changed ? <span className="text-green-600 font-bold">✓ Changed</span> : <span className="text-red-600">✗ Same</span>}
+        </td>
+      </tr>
+    );
     return (
       <div className="bg-white rounded-lg shadow-md p-3 sm:p-5 mb-4">
         <h3 className="text-base sm:text-lg font-semibold text-blue-700 mb-3">Connection Data Comparison</h3>
@@ -193,50 +221,19 @@ const VPNEffectivenessPage = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="px-2 py-2 border-b font-medium">Public IP</td>
-                <td className="px-2 py-2 border-b">{baseline.ip ?? '—'}</td>
-                <td className="px-2 py-2 border-b">{vpn && vpn.ip ? vpn.ip : '—'}</td>
-                <td className="px-2 py-2 border-b">
-                  {vpn && vpn.ip && baseline.ip !== undefined && vpn.ip !== undefined && baseline.ip !== vpn.ip ? 
-                    <span className="text-green-600 font-bold">✓ Changed</span> : 
-                    <span className="text-red-600">✗ Same</span>
-                  }
-                </td>
-              </tr>
-              <tr>
-                <td className="px-2 py-2 border-b font-medium">ISP</td>
-                <td className="px-2 py-2 border-b">{baseline.isp ?? '—'}</td>
-                <td className="px-2 py-2 border-b">{vpn && vpn.isp ? vpn.isp : '—'}</td>
-                <td className="px-2 py-2 border-b">
-                  {vpn && vpn.isp && baseline.isp !== undefined && vpn.isp !== undefined && baseline.isp !== vpn.isp ? 
-                    <span className="text-green-600 font-bold">✓ Changed</span> : 
-                    <span className="text-red-600">✗ Same</span>
-                  }
-                </td>
-              </tr>
-              <tr>
-                <td className="px-2 py-2 border-b font-medium">Location</td>
-                <td className="px-2 py-2 border-b">{baseline.geo ?? '—'}</td>
-                <td className="px-2 py-2 border-b">{vpn && vpn.geo ? vpn.geo : '—'}</td>
-                <td className="px-2 py-2 border-b">
-                  {vpn && vpn.geo && baseline.geo !== undefined && vpn.geo !== undefined && baseline.geo !== vpn.geo ? 
-                    <span className="text-green-600 font-bold">✓ Changed</span> : 
-                    <span className="text-red-600">✗ Same</span>
-                  }
-                </td>
-              </tr>
-              <tr>
-                <td className="px-2 py-2 font-medium">DNS Servers</td>
-                <td className="px-2 py-2">{Array.isArray(baseline.dns) ? baseline.dns.join(', ') : baseline.dns ?? '—'}</td>
-                <td className="px-2 py-2">{vpn && vpn.dns ? (Array.isArray(vpn.dns) ? vpn.dns.join(', ') : vpn.dns) : '—'}</td>
-                <td className="px-2 py-2">
-                  {vpn && vpn.dns && baseline.dns !== undefined && vpn.dns !== undefined && JSON.stringify(baseline.dns) !== JSON.stringify(vpn.dns) ? 
-                    <span className="text-green-600 font-bold">✓ Changed</span> : 
-                    <span className="text-red-600">✗ Same</span>
-                  }
-                </td>
-              </tr>
+              {row('Public IP', baseline.ip, vpn?.ip, baseline.ip !== vpn?.ip)}
+              {row('Country', baseline.country, vpn?.country, baseline.country !== vpn?.country, {
+                bFlag: baseline.country_flag ? <img src={baseline.country_flag} alt="flag" className="inline w-5 ml-1 align-middle" /> : null,
+                vFlag: vpn?.country_flag ? <img src={vpn.country_flag} alt="flag" className="inline w-5 ml-1 align-middle" /> : null
+              })}
+              {row('Region', baseline.region, vpn?.region, baseline.region !== vpn?.region)}
+              {row('City', baseline.city, vpn?.city, baseline.city !== vpn?.city)}
+              {row('ASN', baseline.asn, vpn?.asn, baseline.asn !== vpn?.asn)}
+              {row('Org', baseline.org, vpn?.org, baseline.org !== vpn?.org)}
+              {row('ISP', baseline.isp, vpn?.isp, baseline.isp !== vpn?.isp)}
+              {row('Timezone', baseline.timezone, vpn?.timezone, baseline.timezone !== vpn?.timezone)}
+              {row('Location (lat,lon)', `${baseline.latitude},${baseline.longitude}`, `${vpn?.latitude},${vpn?.longitude}`, baseline.latitude !== vpn?.latitude || baseline.longitude !== vpn?.longitude)}
+              {row('DNS Servers', Array.isArray(baseline.dns) ? baseline.dns.join(', ') : baseline.dns, Array.isArray(vpn?.dns) ? vpn.dns.join(', ') : vpn?.dns, JSON.stringify(baseline.dns) !== JSON.stringify(vpn?.dns))}
             </tbody>
           </table>
         </div>
@@ -392,6 +389,48 @@ const VPNEffectivenessPage = () => {
                 <span className="ml-2">Public IP changed</span>
               </li>
               <li>
+                {baseline.country !== vpnTest.country
+                  ? <span className="text-green-700 font-bold">✔</span>
+                  : <span className="text-red-700 font-bold">✗</span>}
+                <span className="ml-2">Country changed</span>
+              </li>
+              <li>
+                {baseline.region !== vpnTest.region
+                  ? <span className="text-green-700 font-bold">✔</span>
+                  : <span className="text-yellow-700 font-bold">~</span>}
+                <span className="ml-2">Region changed</span>
+              </li>
+              <li>
+                {baseline.city !== vpnTest.city
+                  ? <span className="text-green-700 font-bold">✔</span>
+                  : <span className="text-yellow-700 font-bold">~</span>}
+                <span className="ml-2">City changed</span>
+              </li>
+              <li>
+                {baseline.asn !== vpnTest.asn
+                  ? <span className="text-green-700 font-bold">✔</span>
+                  : <span className="text-red-700 font-bold">✗</span>}
+                <span className="ml-2">ASN changed</span>
+              </li>
+              <li>
+                {baseline.org !== vpnTest.org
+                  ? <span className="text-green-700 font-bold">✔</span>
+                  : <span className="text-red-700 font-bold">✗</span>}
+                <span className="ml-2">Org changed</span>
+              </li>
+              <li>
+                {baseline.isp !== vpnTest.isp
+                  ? <span className="text-green-700 font-bold">✔</span>
+                  : <span className="text-red-700 font-bold">✗</span>}
+                <span className="ml-2">ISP changed</span>
+              </li>
+              <li>
+                {baseline.timezone !== vpnTest.timezone
+                  ? <span className="text-green-700 font-bold">✔</span>
+                  : <span className="text-yellow-700 font-bold">~</span>}
+                <span className="ml-2">Timezone changed</span>
+              </li>
+              <li>
                 {JSON.stringify(baseline.dns) !== JSON.stringify(vpnTest.dns)
                   ? <span className="text-green-700 font-bold">✔</span>
                   : <span className="text-red-700 font-bold">✗</span>}
@@ -433,22 +472,84 @@ const VPNEffectivenessPage = () => {
   );
 
   // Suggestions Tab Content
-  const SuggestionsTab = () => (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-      <h3 className="text-lg font-semibold text-blue-700 mb-2">Suggestions & Recommendations</h3>
-      {baseline && vpnTest ? (
-        <ul className="list-disc list-inside text-sm text-gray-700">
-          {/* Example: You can replace with real recommendations from your testResult if available */}
-          <li>Use a reputable VPN provider for better privacy.</li>
-          <li>Check your DNS settings to avoid leaks.</li>
-          <li>Enable WebRTC leak protection in your browser.</li>
-          <li>Compare your IP and DNS before and after VPN activation.</li>
+  const SuggestionsTab = () => {
+    if (!(baseline && vpnTest)) {
+      return (
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <h3 className="text-lg font-semibold text-blue-700 mb-2">Suggestions & Recommendations</h3>
+          <div className="text-gray-500">No suggestions available. Please complete both tests.</div>
+        </div>
+      );
+    }
+    // Dynamic suggestions based on comparison
+    const suggestions: string[] = [];
+    // IP
+    if (baseline.ip === vpnTest.ip) {
+      suggestions.push('Your public IP did not change after enabling the VPN. This means your VPN is not masking your IP address. Try reconnecting to a different VPN server or contact your VPN provider.');
+    } else {
+      suggestions.push('Your public IP changed after enabling the VPN. This is a good sign that your VPN is working.');
+    }
+    // Country
+    if (baseline.country === vpnTest.country) {
+      suggestions.push('Your country did not change. If you expect to appear in a different country, try selecting a different VPN server location.');
+    } else {
+      suggestions.push('Your country changed after enabling the VPN. This means your VPN is successfully changing your apparent location.');
+    }
+    // ASN
+    if (baseline.asn === vpnTest.asn) {
+      suggestions.push('Your ASN (network provider) did not change. This may indicate your VPN is not routing traffic through a different network. Consider switching VPN servers or providers.');
+    } else {
+      suggestions.push('Your ASN changed, indicating your VPN is routing traffic through a different network.');
+    }
+    // Org
+    if (baseline.org === vpnTest.org) {
+      suggestions.push('Your organization did not change. This may mean your VPN is not fully masking your network identity.');
+    } else {
+      suggestions.push('Your organization changed, which is expected when using a VPN.');
+    }
+    // ISP
+    if (baseline.isp === vpnTest.isp) {
+      suggestions.push('Your ISP did not change. This may mean your VPN is not fully masking your network identity.');
+    } else {
+      suggestions.push('Your ISP changed, which is expected when using a VPN.');
+    }
+    // Region/City
+    if (baseline.region === vpnTest.region && baseline.city === vpnTest.city) {
+      suggestions.push('Your region and city did not change. If you expect to appear in a different location, try a different VPN server.');
+    } else {
+      suggestions.push('Your region or city changed, which is expected when using a VPN.');
+    }
+    // Timezone
+    if (baseline.timezone === vpnTest.timezone) {
+      suggestions.push('Your timezone did not change. Some websites may use this to detect VPN usage. Consider using a VPN with timezone spoofing.');
+    } else {
+      suggestions.push('Your timezone changed, which helps mask your real location.');
+    }
+    // DNS
+    if (JSON.stringify(baseline.dns) === JSON.stringify(vpnTest.dns)) {
+      suggestions.push('Your DNS resolvers did not change. This may indicate a DNS leak. Enable DNS leak protection in your VPN or use secure DNS servers.');
+    } else {
+      suggestions.push('Your DNS resolvers changed, which is a good sign that your VPN is protecting DNS queries.');
+    }
+    // WebRTC
+    if (typeof baseline.webrtcLeakSuppressed !== 'undefined' && typeof vpnTest.webrtcLeakSuppressed !== 'undefined') {
+      if (!vpnTest.webrtcLeakSuppressed) {
+        suggestions.push('WebRTC leaks are not suppressed. Enable WebRTC leak protection in your browser or VPN.');
+      } else {
+        suggestions.push('WebRTC leaks are suppressed.');
+      }
+    }
+    // General
+    suggestions.push('For best privacy, always use a reputable VPN provider, enable all privacy features, and periodically test your connection.');
+    return (
+      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+        <h3 className="text-lg font-semibold text-blue-700 mb-2">Suggestions & Recommendations</h3>
+        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+          {suggestions.map((s, i) => <li key={i}>{s}</li>)}
         </ul>
-      ) : (
-        <div className="text-gray-500">No suggestions available. Please complete both tests.</div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  };
 
   // Main render
   return (
@@ -469,7 +570,16 @@ const VPNEffectivenessPage = () => {
       )}
       {/* Reset Button always available if any test is done */}
       {(baseline || vpnTest) && (
-        <button onClick={() => { setBaseline(null); setVpnTest(null); }} className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded mt-4 w-full">
+        <button
+          onClick={() => {
+            setBaseline(null);
+            setVpnTest(null);
+            // Clear any related localStorage data
+            localStorage.removeItem('vpn_baseline');
+            localStorage.removeItem('vpn_test');
+          }}
+          className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded mt-4 w-full"
+        >
           Reset and Start Over
         </button>
       )}
