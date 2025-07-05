@@ -21,7 +21,7 @@ const SpeedTestInfoBox = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 mt-2 sm:mt-4">
               <div className="bg-white p-2 sm:p-4 rounded-lg border border-green-100">
                 <h4 className="font-semibold text-green-700 mb-1 sm:mb-2 flex items-center">
-                  <FiTrendingUp className="w-3 h-3 sm:w-4 h-4 mr-2" />
+                  <FiTrendingUp className="w-3 h-3 sm:w-4 mr-2" />
                   Speed Measurements
                 </h4>
                 <ul className="text-xs sm:text-sm space-y-1">
@@ -33,7 +33,7 @@ const SpeedTestInfoBox = () => {
               </div>
               <div className="bg-white p-2 sm:p-4 rounded-lg border border-green-100">
                 <h4 className="font-semibold text-green-700 mb-1 sm:mb-2 flex items-center">
-                  <FiShield className="w-3 h-3 sm:w-4 h-4 mr-2" />
+                  <FiShield className="w-3 h-3 sm:w-4 mr-2" />
                   Security Impact
                 </h4>
                 <ul className="text-xs sm:text-sm space-y-1">
@@ -46,7 +46,7 @@ const SpeedTestInfoBox = () => {
             </div>
             <div className="bg-white p-2 sm:p-4 rounded-lg border border-green-100">
               <h4 className="font-semibold text-green-700 mb-1 sm:mb-2 flex items-center">
-                <FiWifi className="w-3 h-3 sm:w-4 h-4 mr-2" />
+                <FiWifi className="w-3 h-3 sm:w-4 mr-2" />
                 Performance Analysis & Recommendations
               </h4>
               <p className="text-xs sm:text-sm">

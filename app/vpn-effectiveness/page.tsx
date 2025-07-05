@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { VPNEffectivenessService, type VPNEffectivenessResult } from '../../utils/vpn-effectiveness';
+import { VPNEffectivenessService} from '../../utils/vpn-effectiveness';
 import { fetchDNSServers } from '../../utils/dnsTestApi';
+import Image from 'next/image';
 
 const TABS = [
   { key: 'tech', label: 'Technical Data' },
@@ -11,9 +14,6 @@ const TABS = [
 ];
 
 const VPNEffectivenessPage = () => {
-  const [result, setResult] = useState<VPNEffectivenessResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'tech' | 'compare' | 'suggestions'>('tech');
   const [baseline, setBaseline] = useState<any | null>(null);
   const [vpnTest, setVpnTest] = useState<any | null>(null);
@@ -93,6 +93,7 @@ const VPNEffectivenessPage = () => {
           }
           return null;
         } catch (err) {
+          console.warn('Failed to detect DNS servers:', err);
           return null;
         }
       });
@@ -187,68 +188,6 @@ const VPNEffectivenessPage = () => {
     }
   }, []);
 
-  const saveBaseline = (currentData: any) => {
-    localStorage.setItem('vpn_baseline', JSON.stringify(currentData));
-    setBaseline(currentData);
-  };
-
-  const clearBaseline = () => {
-    localStorage.removeItem('vpn_baseline');
-    setBaseline(null);
-  };
-
-  const compareToBaseline = (currentData: any) => {
-    if (!baseline) return;
-    let changes = [];
-    if (baseline.ip !== currentData.ip) changes.push('Public IP');
-    if (baseline.dns && currentData.dns && JSON.stringify(baseline.dns) !== JSON.stringify(currentData.dns)) changes.push('DNS Servers');
-    if (baseline.isp !== currentData.isp) changes.push('ISP');
-    if (baseline.geo !== currentData.geo) changes.push('Geolocation');
-    if (changes.length > 0) {
-      setResult({ ...currentData, vpnStatus: 'poor', overallScore: 0, maxPossibleScore: 100, summary: { testsPassed: 0, totalTests: 0, criticalIssues: changes.length } });
-    } else {
-      setResult({ ...currentData, vpnStatus: 'excellent', overallScore: 100, maxPossibleScore: 100, summary: { testsPassed: 0, totalTests: 0, criticalIssues: 0 } });
-    }
-  };
-
-  const getStatusColor = (status: 'excellent' | 'good' | 'poor' | 'critical' | 'unknown') => {
-    switch (status) {
-      case 'excellent': return 'text-green-600 bg-green-50 border-green-200';
-      case 'good': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'poor': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'critical': return 'text-red-600 bg-red-50 border-red-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
-
-  const getTestStatusIcon = (status: 'pass' | 'fail' | 'warning' | 'unknown') => {
-    switch (status) {
-      case 'pass': return '✅';
-      case 'fail': return '❌';
-      case 'warning': return '⚠️';
-      default: return '❓';
-    }
-  };
-
-  const getTestStatusColor = (status: 'pass' | 'fail' | 'warning' | 'unknown') => {
-    switch (status) {
-      case 'pass': return 'text-green-700 bg-green-50 border-green-200';
-      case 'fail': return 'text-red-700 bg-red-50 border-red-200';
-      case 'warning': return 'text-yellow-700 bg-yellow-50 border-yellow-200';
-      default: return 'text-gray-700 bg-gray-50 border-gray-200';
-    }
-  };
-
-  // Heuristics status badge
-  const heuristicsStatus = result && typeof result === 'object' && 'heuristicsStatus' in result && result.heuristicsStatus
-    ? result.heuristicsStatus as 'vpn_detected' | 'no_vpn' | 'inconclusive'
-    : 'inconclusive';
-  const heuristicsBadge = {
-    vpn_detected: { text: 'VPN Detected', color: 'bg-green-100 text-green-700' },
-    no_vpn: { text: 'No VPN Detected', color: 'bg-red-100 text-red-700' },
-    inconclusive: { text: 'Inconclusive', color: 'bg-yellow-100 text-yellow-700' }
-  }[heuristicsStatus];
-
   // Category explanations
   const CATEGORY_EXPLANATIONS: Record<string, string> = {
     ip: 'Checks if your real IP address is exposed (e.g., via WebRTC) or if your VPN is masking it.',
@@ -339,8 +278,8 @@ const VPNEffectivenessPage = () => {
             <tbody>
               {row('Public IP', baseline.ip, vpn?.ip, baseline.ip !== vpn?.ip)}
               {row('Country', baseline.country, vpn?.country, baseline.country !== vpn?.country, {
-                bFlag: baseline.country_flag ? <img src={baseline.country_flag} alt="flag" className="inline w-5 ml-1 align-middle" /> : null,
-                vFlag: vpn?.country_flag ? <img src={vpn.country_flag} alt="flag" className="inline w-5 ml-1 align-middle" /> : null
+                bFlag: baseline.country_flag ? <Image src={baseline.country_flag} alt="flag" width={20} height={14} className="inline w-5 ml-1 align-middle" /> : null,
+                vFlag: vpn?.country_flag ? <Image src={vpn.country_flag} alt="flag" width={20} height={14} className="inline w-5 ml-1 align-middle" /> : null
               })}
               {row('Region', baseline.region, vpn?.region, baseline.region !== vpn?.region)}
               {row('City', baseline.city, vpn?.city, baseline.city !== vpn?.city)}
@@ -358,7 +297,7 @@ const VPNEffectivenessPage = () => {
   };
 
   // Expandable test result component
-  const ExpandableTestResult = ({ test, isBaseline }: { test: any, isBaseline: boolean }) => {
+  const ExpandableTestResult = ({ test }: { test: any }) => {
     const [open, setOpen] = useState(false);
     if (!test) return null;
     const statusIcon = test.status === 'pass' ? '✔' : test.status === 'fail' ? '✗' : '⚠️';
@@ -459,7 +398,7 @@ const VPNEffectivenessPage = () => {
             {/* Expandable subtests */}
             <div className="mt-2">
               {baselineSubtests.map((test: any, i: number) => (
-                <ExpandableTestResult key={i} test={test} isBaseline={true} />
+                <ExpandableTestResult key={i} test={test} />
               ))}
             </div>
           </div>
@@ -476,7 +415,7 @@ const VPNEffectivenessPage = () => {
             {/* Expandable subtests */}
             <div className="mt-2">
               {vpnSubtests.map((test: any, i: number) => (
-                <ExpandableTestResult key={i} test={test} isBaseline={false} />
+                <ExpandableTestResult key={i} test={test} />
               ))}
             </div>
           </div>
@@ -491,7 +430,7 @@ const VPNEffectivenessPage = () => {
       <h3 className="text-lg font-semibold text-blue-800 mb-2">Step 1: Test Your Baseline (VPN OFF)</h3>
       <p className="text-sm text-blue-700 mb-3">
         First, we need to see your real IP, DNS, and location <b>without VPN</b>.<br/>
-        <span className="block mt-2 text-xs text-blue-900">This will be your baseline. After you enable your VPN, we'll test again and show you exactly what changed—so you can see if your VPN is really protecting you.</span>
+        <span className="block mt-2 text-xs text-blue-900">This will be your baseline. After you enable your VPN, we&rsquo;ll test again and show you exactly what changed—so you can see if your VPN is really protecting you.</span>
       </p>
       <button onClick={runBaselineTest} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold">
         Test Baseline (VPN Off)
@@ -513,7 +452,7 @@ const VPNEffectivenessPage = () => {
       <h3 className="text-lg font-semibold text-green-800 mb-2">Step 2: Test With VPN (VPN ON)</h3>
       <p className="text-sm text-green-700 mb-3">
         Now turn <b>ON</b> your VPN and test again to compare the results.<br/>
-        <span className="block mt-2 text-xs text-green-900">We'll show you a side-by-side comparison of your connection details and privacy protections before and after VPN.</span>
+        <span className="block mt-2 text-xs text-green-900">We&apos;ll show you a side-by-side comparison of your connection details and privacy protections before and after VPN.</span>
       </p>
       <button onClick={runVPNTest} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold">
         Test with VPN

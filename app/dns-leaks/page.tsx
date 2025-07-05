@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -23,9 +25,9 @@ type DNSServer = {
 export default function DNSLeakTest() {
   const [referenceServer, setReferenceServer] = useState<DNSServer | null>(null);
   const [dnsServers, setDNSServers] = useState<DNSServer[]>([]);
-  const [currentTest, setCurrentTest] = useState<number>(0);
+  const [currentTest, ] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
-  const [currentLink, setCurrentLink] = useState<string>(''); // Current endpoint link
+  const [currentLink, ] = useState<string>(''); // Current endpoint link
   const [, setError] = useState<string | null>(null);
   const [isTestStarted, setIsTestStarted] = useState<boolean>(false); // New state
 

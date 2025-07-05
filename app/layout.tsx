@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Sidebar from "./components/Sidebar";
 import LayoutWrapper from "./components/LayoutWrapper";
-import Footer from "./main/Footer";
 import "./globals.css";
 
 import CookieConsent from "./main/CookieConsent";

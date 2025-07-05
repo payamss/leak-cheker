@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { FiAlertCircle, FiLoader, FiGlobe } from 'react-icons/fi';
+import { FiLoader, FiGlobe } from 'react-icons/fi';
 
 // Define props for the component
 type CountryFlagProps = {
