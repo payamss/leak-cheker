@@ -326,7 +326,7 @@ const VPNEffectivenessPage = () => {
     return (
       <div className="bg-white rounded-lg shadow-md p-3 sm:p-5 mb-4">
         <h3 className="text-base sm:text-lg font-semibold text-blue-700 mb-3">Connection Data Comparison</h3>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto w-full">
           <table className="w-full text-xs sm:text-sm border border-gray-200">
             <thead>
               <tr className="bg-gray-100">
@@ -366,7 +366,7 @@ const VPNEffectivenessPage = () => {
     return (
       <div className="mb-1 border rounded bg-gray-50">
         <button
-          className="w-full flex items-center justify-between px-2 py-1 text-left focus:outline-none"
+          className="w-full flex items-center justify-between px-2 py-2 text-left focus:outline-none active:bg-gray-100"
           onClick={() => setOpen((v) => !v)}
         >
           <span className="flex items-center">
@@ -445,7 +445,7 @@ const VPNEffectivenessPage = () => {
           {vpn && baseline && getChangeBadge(baseline.score, vpn.score)}
         </div>
         <div className="text-xs text-gray-600 mb-2">{explanation}</div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <div className="flex items-center mb-1">
               <span className={`px-2 py-0.5 rounded text-xs font-semibold border mr-2 ${verdictBaseline?.color}`}>{verdictBaseline?.icon} {verdictBaseline?.verdict}</span>
@@ -531,7 +531,7 @@ const VPNEffectivenessPage = () => {
 
   // Tab bar UI
   const renderTabBar = () => (
-    <div className="flex space-x-2 mb-4 border-b border-gray-200">
+    <div className="flex flex-wrap space-x-2 mb-4 border-b border-gray-200 overflow-x-auto">
       {TABS.map(tab => (
         <button
           key={tab.key}
@@ -772,7 +772,7 @@ const VPNEffectivenessPage = () => {
             localStorage.removeItem('vpn_baseline');
             localStorage.removeItem('vpn_test');
           }}
-          className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded mt-4 w-full"
+          className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded mt-4 w-full max-w-xs mx-auto block"
         >
           Reset and Start Over
         </button>
